@@ -6,3 +6,9 @@ node_modules
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+# Frontend build output
+frontend/dist/
+
+# Local environment variables (contain secrets)
+frontend/.env.local
