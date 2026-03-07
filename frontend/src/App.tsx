@@ -1,4 +1,10 @@
-import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import { useAuthenticator, Authenticator } from "@aws-amplify/ui-react";
 import { useEffect } from "react";
 import { Layout } from "@/components/Layout";
@@ -18,7 +24,8 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
         <span>Loading…</span>
       </div>
     );
-  if (authStatus !== "authenticated") return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  if (authStatus !== "authenticated")
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   return <>{children}</>;
 }
 
@@ -48,10 +55,7 @@ export default function App() {
     <Layout>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route
-          path="/login"
-          element={<LoginPage />}
-        />
+        <Route path="/login" element={<LoginPage />} />
         <Route
           path="/sets"
           element={
