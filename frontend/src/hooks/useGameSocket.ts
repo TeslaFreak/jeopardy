@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { WS_URL } from '../amplify-config';
-import type { WsMessage, ServerAction } from '../types';
+import type { WsMessage, ServerAction, GameConfig } from '../types';
 
 export type GamePhase = 'idle' | 'lobby' | 'active' | 'ended';
 
@@ -20,27 +20,39 @@ export interface PlayerInfo {
   connId: string;
   playerName: string;
   score: number;
-  isHost: boolean;
 }
 
 export interface ActiveQuestion {
   clue: string;
-  answer: string;
+  answer?: string; // only present for host
   categorySlug: string;
   categoryName: string;
   value: number;
 }
 
+export interface RevealedAnswer {
+  answer: string;
+  wasCorrect: boolean;
+  correctPlayerName?: string;
+}
+
 export interface GameState {
   phase: GamePhase;
   roomCode: string | null;
+  connId: string | null;
   players: PlayerInfo[];
   scores: Record<string, number>;
-  board: { name: string; slug: string; questions: { value: number; clue: string; answer: string }[] }[];
+  board: { name: string; slug: string; questions: { value: number; clue: string; answer?: string }[] }[];
   activeQuestion: ActiveQuestion | null;
   buzzedPlayer: { playerId: string; playerName: string } | null;
+  buzzDeadline: number | null;
   usedQuestions: string[];
   finalScores: Record<string, number> | null;
+  config: GameConfig | null;
+  failedBuzzPlayers: string[];
+  stealDeadline: number | null;
+  revealedAnswer: RevealedAnswer | null;
+  isAllQuestionsComplete: boolean;
   error: string | null;
   isReconnecting: boolean;
 }
@@ -48,13 +60,20 @@ export interface GameState {
 const initialState: GameState = {
   phase: 'idle',
   roomCode: null,
+  connId: null,
   players: [],
   scores: {},
   board: [],
   activeQuestion: null,
   buzzedPlayer: null,
+  buzzDeadline: null,
   usedQuestions: [],
   finalScores: null,
+  config: null,
+  failedBuzzPlayers: [],
+  stealDeadline: null,
+  revealedAnswer: null,
+  isAllQuestionsComplete: false,
   error: null,
   isReconnecting: false,
 };
@@ -64,11 +83,11 @@ export function useGameSocket() {
   const wsRef = useRef<WebSocket | null>(null);
 
   // Reconnect bookkeeping
-  const reconnectParamsRef = useRef<{ roomCode: string; playerName: string; isHost: boolean } | null>(null);
+  const reconnectParamsRef = useRef<{ roomCode: string; playerName: string; isHost: boolean; role?: string } | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Stable ref to connect so ws.onclose can invoke it without a circular dep
-  const connectRef = useRef<(roomCode: string, playerName: string, isHost: boolean) => void>(() => {});
+  const hasOpenedRef = useRef(false);
+  const connectRef = useRef<(roomCode: string, playerName: string, isHost: boolean, role?: string) => void>(() => {});
 
   const updateState = useCallback((partial: Partial<GameState>) => {
     setState(prev => ({ ...prev, ...partial }));
@@ -78,7 +97,6 @@ export function useGameSocket() {
     switch (action) {
       case 'PLAYER_JOINED': {
         const p = payload as { players: PlayerInfo[]; scores: Record<string, number> };
-        // Preserve phase if game is already active or ended (e.g. reconnect)
         setState(prev => ({
           ...prev,
           players: p.players,
@@ -97,12 +115,22 @@ export function useGameSocket() {
         break;
       }
       case 'GAME_STARTED': {
-        const p = payload as { board: GameState['board'] };
-        updateState({ board: p.board, phase: 'active', activeQuestion: null, buzzedPlayer: null });
+        const p = payload as { board: GameState['board']; config: GameConfig };
+        updateState({
+          board: p.board,
+          config: p.config,
+          phase: 'active',
+          activeQuestion: null,
+          buzzedPlayer: null,
+          buzzDeadline: null,
+          failedBuzzPlayers: [],
+          stealDeadline: null,
+          revealedAnswer: null,
+        });
         break;
       }
       case 'QUESTION_ACTIVE': {
-        const p = payload as ActiveQuestion & { question: { clue: string; answer: string } };
+        const p = payload as ActiveQuestion & { question: { clue: string; answer?: string } };
         updateState({
           activeQuestion: {
             clue: p.question.clue,
@@ -112,12 +140,20 @@ export function useGameSocket() {
             value: p.value,
           },
           buzzedPlayer: null,
+          buzzDeadline: null,
+          failedBuzzPlayers: [],
+          stealDeadline: null,
+          revealedAnswer: null,
         });
         break;
       }
       case 'PLAYER_BUZZED': {
-        const p = payload as { playerId: string; playerName: string };
-        updateState({ buzzedPlayer: p });
+        const p = payload as { playerId: string; playerName: string; deadline?: number };
+        updateState({
+          buzzedPlayer: { playerId: p.playerId, playerName: p.playerName },
+          buzzDeadline: p.deadline ?? null,
+          stealDeadline: null,
+        });
         break;
       }
       case 'SCORE_UPDATE': {
@@ -125,27 +161,59 @@ export function useGameSocket() {
         updateState({ scores: p.scores });
         break;
       }
+      case 'STEAL_OPEN': {
+        const p = payload as { deadline: number; failedBuzzPlayers: string[] };
+        updateState({
+          stealDeadline: p.deadline,
+          failedBuzzPlayers: p.failedBuzzPlayers,
+          buzzedPlayer: null,
+          buzzDeadline: null,
+        });
+        break;
+      }
+      case 'REVEAL_ANSWER': {
+        const p = payload as RevealedAnswer;
+        updateState({ revealedAnswer: p });
+        break;
+      }
       case 'BACK_TO_BOARD': {
         const p = payload as { usedQuestions: string[] };
-        updateState({ usedQuestions: p.usedQuestions, activeQuestion: null, buzzedPlayer: null });
+        updateState({
+          usedQuestions: p.usedQuestions,
+          activeQuestion: null,
+          buzzedPlayer: null,
+          buzzDeadline: null,
+          failedBuzzPlayers: [],
+          stealDeadline: null,
+          revealedAnswer: null,
+        });
         break;
       }
       case 'GAME_OVER': {
-        const p = payload as { finalScores: Record<string, number> };
-        // Stop any pending reconnect — game is over
+        const p = payload as { finalScores?: Record<string, number>; allQuestionsComplete?: boolean };
         reconnectParamsRef.current = null;
         if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-        updateState({ phase: 'ended', finalScores: p.finalScores, activeQuestion: null, isReconnecting: false });
+        updateState({
+          phase: 'ended',
+          finalScores: p.finalScores ?? null,
+          activeQuestion: null,
+          buzzedPlayer: null,
+          buzzDeadline: null,
+          stealDeadline: null,
+          isReconnecting: false,
+          isAllQuestionsComplete: p.allQuestionsComplete ?? false,
+        });
         break;
       }
       case 'GAME_STATE_SYNC': {
-        // Full state restoration sent by the server after a successful reconnect
         type SyncPayload = {
           board: GameState['board'];
           usedQuestions: string[];
           scores: Record<string, number>;
+          config?: GameConfig;
+          failedBuzzPlayers?: string[];
           activeQuestion: {
-            question: { clue: string; answer: string };
+            question: { clue: string; answer?: string };
             categorySlug: string;
             categoryName: string;
             value: number;
@@ -157,6 +225,8 @@ export function useGameSocket() {
           board: p.board,
           usedQuestions: p.usedQuestions,
           scores: p.scores,
+          config: p.config ?? null,
+          failedBuzzPlayers: p.failedBuzzPlayers ?? [],
           phase: 'active',
           isReconnecting: false,
           activeQuestion: p.activeQuestion
@@ -184,18 +254,17 @@ export function useGameSocket() {
   const connect = useCallback((
     roomCode: string,
     playerName: string,
-    isHost: boolean
+    isHost: boolean,
+    role?: string
   ) => {
-    // Cancel any pending reconnect timer
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
     }
 
-    // Save params for auto-reconnect
-    reconnectParamsRef.current = { roomCode, playerName, isHost };
+    reconnectParamsRef.current = { roomCode, playerName, isHost, role };
+    hasOpenedRef.current = false;
 
-    // Close any existing socket without triggering auto-reconnect
     if (wsRef.current) {
       wsRef.current.onclose = null;
       wsRef.current.close();
@@ -205,25 +274,27 @@ export function useGameSocket() {
     const url = new URL(WS_URL);
     url.searchParams.set('roomCode', roomCode);
     url.searchParams.set('playerName', playerName);
+    if (role) {
+      url.searchParams.set('role', role);
+    }
     url.searchParams.set('isHost', String(isHost));
 
     const ws = new WebSocket(url.toString());
     wsRef.current = ws;
 
     ws.onopen = () => {
-      // If this is a reconnect attempt (attempts > 0), preserve the current game
-      // phase — GAME_STATE_SYNC will refresh it. Resetting to 'lobby' would cause
-      // a visible flash of the waiting screen before the sync arrives.
+      hasOpenedRef.current = true;
       const wasReconnecting = reconnectAttemptsRef.current > 0;
       reconnectAttemptsRef.current = 0;
       setState(prev => ({
         ...prev,
         roomCode,
+        connId: null, // will be set if needed
         phase: wasReconnecting && prev.phase !== 'idle' ? prev.phase : 'lobby',
         error: null,
         isReconnecting: false,
       }));
-      if (!isHost) {
+      if (!isHost && role !== 'tv') {
         sendMessage('JOIN_ROOM', { roomCode, playerName });
       }
     };
@@ -241,25 +312,29 @@ export function useGameSocket() {
 
     ws.onclose = () => {
       setState(prev => {
+        // Connection rejected before ever opening (e.g. room not found)
+        if (!hasOpenedRef.current) {
+          reconnectParamsRef.current = null;
+          reconnectAttemptsRef.current = 0;
+          return { ...initialState, error: 'Room not found' };
+        }
         if (prev.phase === 'ended' || !reconnectParamsRef.current) {
           return prev.phase !== 'ended'
             ? { ...prev, error: 'Disconnected from server' }
             : prev;
         }
-        // Exponential backoff: 1 s, 2 s, 4 s, 8 s, 16 s (max)
         const attempts = reconnectAttemptsRef.current;
         const delay = Math.min(1000 * Math.pow(2, attempts), 16000);
         reconnectAttemptsRef.current = attempts + 1;
         reconnectTimerRef.current = setTimeout(() => {
           const params = reconnectParamsRef.current;
-          if (params) connectRef.current(params.roomCode, params.playerName, params.isHost);
+          if (params) connectRef.current(params.roomCode, params.playerName, params.isHost, params.role);
         }, delay);
         return { ...prev, isReconnecting: true, error: null };
       });
     };
   }, [handleMessage, updateState]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Keep connectRef in sync so ws.onclose always calls the latest version
   useEffect(() => { connectRef.current = connect; }, [connect]);
 
   const sendMessage = useCallback((action: string, payload: unknown = {}) => {
@@ -269,7 +344,7 @@ export function useGameSocket() {
   }, []);
 
   const disconnect = useCallback(() => {
-    reconnectParamsRef.current = null; // disable auto-reconnect
+    reconnectParamsRef.current = null;
     if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     if (wsRef.current) {
       wsRef.current.onclose = null;

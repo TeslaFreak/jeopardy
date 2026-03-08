@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useGameSocket } from "../hooks/useGameSocket";
+import { useCountdown } from "../hooks/useCountdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Zap, Trophy, ChevronRight, Loader2, WifiOff } from "lucide-react";
+import {
+  Zap,
+  Trophy,
+  ChevronRight,
+  Loader2,
+  WifiOff,
+  Clock,
+} from "lucide-react";
 
 type PlayerPhase =
   | "enter"
@@ -14,6 +22,94 @@ type PlayerPhase =
   | "active_question"
   | "buzzed"
   | "ended";
+
+function WinnerRevealPlayer({
+  finalScores,
+  players,
+  myName,
+}: {
+  finalScores: Record<string, number>;
+  players: { connId: string; playerName: string }[];
+  myName: string;
+}) {
+  const [revealed, setRevealed] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setRevealed(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const sorted = Object.entries(finalScores).sort(([, a], [, b]) => b - a);
+  const winnerConnId = sorted[0]?.[0];
+  const winnerPlayer = players.find((p) => p.connId === winnerConnId);
+  const winnerName = winnerPlayer?.playerName ?? winnerConnId;
+  const winnerScore = sorted[0]?.[1] ?? 0;
+  const isMe = winnerPlayer?.playerName === myName;
+
+  if (!revealed) {
+    return (
+      <div className="flex flex-col items-center py-16 gap-6 text-center">
+        <p className="font-display text-2xl text-white/60">
+          All questions answered!
+        </p>
+        <p className="font-display text-4xl text-gold animate-[drumroll_0.6s_ease-in-out_infinite]">
+          And the winner is…
+        </p>
+        <div className="flex gap-2 mt-4">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="w-4 h-4 rounded-full bg-gold animate-[countdown-pulse_0.8s_ease-in-out_infinite]"
+              style={{ animationDelay: `${i * 0.2}s` }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center py-12 animate-[winner-reveal_0.6s_ease-out] text-center">
+      <Trophy className="w-16 h-16 text-gold mb-4 drop-shadow-[0_0_30px_rgba(245,197,24,0.6)] animate-[pulse-gold_2s_ease-in-out_infinite]" />
+      <h2 className="font-display text-4xl font-bold text-gold mb-1 animate-[glow-text-gold_3s_ease-in-out_infinite]">
+        {isMe ? "YOU WIN!" : winnerName}
+      </h2>
+      <p className="font-display text-xl text-white/50 mb-10">${winnerScore}</p>
+      <div className="flex gap-4 flex-wrap justify-center mb-10">
+        {sorted.map(([connId, score], i) => {
+          const p = players.find((pl) => pl.connId === connId);
+          return (
+            <div
+              key={connId}
+              className={cn(
+                "flex flex-col items-center p-5 rounded-2xl border min-w-[110px]",
+                p?.playerName === myName ? "ring-2 ring-gold/50" : "",
+                i === 0
+                  ? "border-gold bg-gold/20 shadow-[0_0_30px_rgba(245,197,24,0.3)]"
+                  : "border-white/10 bg-surface",
+              )}
+            >
+              <span className="text-3xl mb-1">
+                {i === 0 ? "🏆" : `#${i + 1}`}
+              </span>
+              <span className="font-semibold text-white">
+                {p?.playerName ?? connId}
+              </span>
+              <span
+                className={cn(
+                  "font-display text-2xl font-bold mt-1",
+                  i === 0 ? "text-gold" : "text-white",
+                )}
+              >
+                ${score}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function Play() {
   const [searchParams] = useSearchParams();
@@ -24,15 +120,27 @@ export default function Play() {
   const { state, connect, sendMessage } = useGameSocket();
   const navigate = useNavigate();
 
+  const { secondsLeft: buzzSecondsLeft } = useCountdown(state.buzzDeadline);
+  const { secondsLeft: stealSecondsLeft } = useCountdown(state.stealDeadline);
+
   function joinRoom(e: React.FormEvent) {
     e.preventDefault();
     if (!roomCode.trim() || !playerName.trim()) return;
     const code = roomCode.trim().toUpperCase();
     const name = playerName.trim();
     setMyName(name);
-    connect(code, name, false);
+    connect(code, name, false, "player");
     setLocalPhase("lobby");
   }
+
+  // Find my connId from the players list
+  const myConnId = state.players.find((p) => p.playerName === myName)?.connId;
+  const iFailedBuzz = myConnId
+    ? state.failedBuzzPlayers.includes(myConnId)
+    : false;
+
+  const isStealPhase =
+    state.stealDeadline !== null && !state.buzzedPlayer && state.activeQuestion;
 
   const gamePhase = state.phase;
   const effectivePhase: PlayerPhase = (() => {
@@ -48,11 +156,17 @@ export default function Play() {
     return "lobby";
   })();
 
-  // Pre-fill room code from URL param
   useEffect(() => {
     const param = searchParams.get("room");
     if (param) setRoomCode(param.toUpperCase());
   }, [searchParams]);
+
+  // Reset to enter phase when connection is rejected (e.g. room not found)
+  useEffect(() => {
+    if (state.error && state.phase === "idle" && localPhase !== "enter") {
+      setLocalPhase("enter");
+    }
+  }, [state.error, state.phase, localPhase]);
 
   function buzzIn() {
     sendMessage("BUZZ_IN", {});
@@ -75,6 +189,12 @@ export default function Play() {
               Enter the room code and your name
             </p>
           </div>
+
+          {state.error && (
+            <div className="rounded-xl border border-red-500/30 bg-red-900/20 text-red-300 px-4 py-3 mb-4 text-sm text-center">
+              {state.error}
+            </div>
+          )}
 
           <form onSubmit={joinRoom} className="flex flex-col gap-4">
             <Input
@@ -149,7 +269,9 @@ export default function Play() {
                   ? "border-gold/40 bg-gold/10 text-gold"
                   : state.buzzedPlayer?.playerId === p.connId
                     ? "border-gold bg-gold/20 text-gold shadow-[0_0_12px_rgba(245,197,24,0.4)]"
-                    : "border-white/10 bg-surface text-white",
+                    : state.failedBuzzPlayers.includes(p.connId)
+                      ? "border-red-500/30 bg-red-900/10 text-red-300"
+                      : "border-white/10 bg-surface text-white",
               )}
             >
               <span className="font-medium">{p.playerName}</span>
@@ -201,77 +323,157 @@ export default function Play() {
               </p>
             </div>
 
-            {effectivePhase === "buzzed" && state.buzzedPlayer ? (
+            {/* Revealed answer (broadcast after host confirms/timer expires) */}
+            {state.revealedAnswer && (
               <div
                 className={cn(
-                  "w-full rounded-2xl border p-6 text-center font-display text-2xl font-bold",
-                  state.buzzedPlayer.playerName === myName
-                    ? "border-gold bg-gold/20 text-gold shadow-[0_0_40px_rgba(245,197,24,0.4)]"
-                    : "border-white/10 bg-surface text-white",
+                  "w-full rounded-xl border px-6 py-3 mb-4 text-sm text-center",
+                  state.revealedAnswer.wasCorrect
+                    ? "border-emerald-500/30 bg-emerald-900/20 text-emerald-300"
+                    : "border-red-500/30 bg-red-900/20 text-red-300",
                 )}
               >
-                {state.buzzedPlayer.playerName === myName
-                  ? "⚡ YOU buzzed in! Answer the host."
-                  : `${state.buzzedPlayer.playerName} buzzed in!`}
+                {state.revealedAnswer.wasCorrect
+                  ? `✓ ${state.revealedAnswer.correctPlayerName} got it right!`
+                  : "✗ Nobody got it right."}
+                {" — "}
+                {state.revealedAnswer.answer}
               </div>
-            ) : (
+            )}
+
+            {effectivePhase === "buzzed" && state.buzzedPlayer ? (
+              <div className="w-full flex flex-col items-center gap-3">
+                <div
+                  className={cn(
+                    "w-full rounded-2xl border p-6 text-center font-display text-2xl font-bold",
+                    state.buzzedPlayer.playerName === myName
+                      ? "border-gold bg-gold/20 text-gold shadow-[0_0_40px_rgba(245,197,24,0.4)]"
+                      : "border-white/10 bg-surface text-white",
+                  )}
+                >
+                  {state.buzzedPlayer.playerName === myName
+                    ? "⚡ YOU buzzed in! Answer the host."
+                    : `${state.buzzedPlayer.playerName} buzzed in!`}
+                </div>
+                {state.buzzDeadline && buzzSecondsLeft !== null && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="w-4 h-4 text-white/40" />
+                    <span
+                      className={cn(
+                        "font-display font-bold text-lg",
+                        buzzSecondsLeft <= 5
+                          ? "text-red-400 animate-[countdown-pulse_0.8s_ease-in-out_infinite]"
+                          : "text-gold",
+                      )}
+                    >
+                      {buzzSecondsLeft}s
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : isStealPhase ? (
+              <div className="w-full flex flex-col items-center gap-4">
+                <p className="font-display text-lg font-semibold text-yellow-400">
+                  Steal opportunity!
+                </p>
+                {stealSecondsLeft !== null && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="w-4 h-4 text-white/40" />
+                    <span
+                      className={cn(
+                        "font-display font-bold text-lg",
+                        stealSecondsLeft <= 5
+                          ? "text-red-400 animate-[countdown-pulse_0.8s_ease-in-out_infinite]"
+                          : "text-gold",
+                      )}
+                    >
+                      {stealSecondsLeft}s
+                    </span>
+                  </div>
+                )}
+                {iFailedBuzz ? (
+                  <div className="w-full rounded-2xl border border-red-500/20 bg-red-900/10 p-6 text-center">
+                    <p className="font-display text-xl text-red-400">
+                      You already answered wrong
+                    </p>
+                    <p className="text-white/40 text-sm mt-1">
+                      Can&apos;t buzz again on this question
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={buzzIn}
+                    className="w-full rounded-2xl bg-yellow-600 hover:bg-yellow-500 active:scale-95 text-white font-display text-3xl font-bold py-6 shadow-[0_4px_30px_rgba(202,138,4,0.5)] hover:shadow-[0_4px_40px_rgba(202,138,4,0.7)] transition-all duration-150"
+                  >
+                    STEAL!
+                  </button>
+                )}
+              </div>
+            ) : !state.revealedAnswer ? (
               <button
                 onClick={buzzIn}
                 className="w-full rounded-2xl bg-red-600 hover:bg-red-500 active:scale-95 text-white font-display text-4xl font-bold py-8 shadow-[0_4px_30px_rgba(220,38,38,0.5)] hover:shadow-[0_4px_40px_rgba(220,38,38,0.7)] transition-all duration-150 animate-[buzz_0.3s_ease-in-out]"
               >
                 BUZZ IN!
               </button>
-            )}
+            ) : null}
           </div>
         )}
 
       {/* Ended */}
-      {effectivePhase === "ended" && (
-        <div className="flex flex-col items-center py-12 animate-[slide-up_0.4s_ease-out] text-center">
-          <Trophy className="w-16 h-16 text-gold mb-4 drop-shadow-[0_0_30px_rgba(245,197,24,0.6)]" />
-          <h2 className="font-display text-4xl font-bold text-gold mb-2">
-            Game Over!
-          </h2>
-          <p className="text-white/50 mb-10">Final Scores</p>
-          <div className="flex gap-4 flex-wrap justify-center mb-10">
-            {Object.entries(state.finalScores ?? {})
-              .sort(([, a], [, b]) => b - a)
-              .map(([connId, score], i) => {
-                const p = state.players.find((pl) => pl.connId === connId);
-                return (
-                  <div
-                    key={connId}
-                    className={cn(
-                      "flex flex-col items-center p-5 rounded-2xl border min-w-[110px]",
-                      p?.playerName === myName ? "ring-2 ring-gold/50" : "",
-                      i === 0
-                        ? "border-gold bg-gold/20 shadow-[0_0_30px_rgba(245,197,24,0.3)]"
-                        : "border-white/10 bg-surface",
-                    )}
-                  >
-                    <span className="text-3xl mb-1">
-                      {i === 0 ? "🏆" : `#${i + 1}`}
-                    </span>
-                    <span className="font-semibold text-white">
-                      {p?.playerName ?? connId}
-                    </span>
-                    <span
+      {effectivePhase === "ended" &&
+        (state.isAllQuestionsComplete && state.finalScores ? (
+          <WinnerRevealPlayer
+            finalScores={state.finalScores}
+            players={state.players}
+            myName={myName}
+          />
+        ) : (
+          <div className="flex flex-col items-center py-12 animate-[slide-up_0.4s_ease-out] text-center">
+            <Trophy className="w-16 h-16 text-gold mb-4 drop-shadow-[0_0_30px_rgba(245,197,24,0.6)]" />
+            <h2 className="font-display text-4xl font-bold text-gold mb-2">
+              Game Over!
+            </h2>
+            <p className="text-white/50 mb-10">Final Scores</p>
+            <div className="flex gap-4 flex-wrap justify-center mb-10">
+              {Object.entries(state.finalScores ?? {})
+                .sort(([, a], [, b]) => b - a)
+                .map(([connId, score], i) => {
+                  const p = state.players.find((pl) => pl.connId === connId);
+                  return (
+                    <div
+                      key={connId}
                       className={cn(
-                        "font-display text-2xl font-bold mt-1",
-                        i === 0 ? "text-gold" : "text-white",
+                        "flex flex-col items-center p-5 rounded-2xl border min-w-[110px]",
+                        p?.playerName === myName ? "ring-2 ring-gold/50" : "",
+                        i === 0
+                          ? "border-gold bg-gold/20 shadow-[0_0_30px_rgba(245,197,24,0.3)]"
+                          : "border-white/10 bg-surface",
                       )}
                     >
-                      ${score}
-                    </span>
-                  </div>
-                );
-              })}
+                      <span className="text-3xl mb-1">
+                        {i === 0 ? "🏆" : `#${i + 1}`}
+                      </span>
+                      <span className="font-semibold text-white">
+                        {p?.playerName ?? connId}
+                      </span>
+                      <span
+                        className={cn(
+                          "font-display text-2xl font-bold mt-1",
+                          i === 0 ? "text-gold" : "text-white",
+                        )}
+                      >
+                        ${score}
+                      </span>
+                    </div>
+                  );
+                })}
+            </div>
+            <Button variant="gold" size="lg" onClick={() => navigate("/")}>
+              Play Again
+            </Button>
           </div>
-          <Button variant="gold" size="lg" onClick={() => navigate("/")}>
-            Play Again
-          </Button>
-        </div>
-      )}
+        ))}
     </div>
   );
 }

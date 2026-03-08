@@ -66,7 +66,34 @@ export const handler = async (
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
       ExpressionAttributeValues: { ':pk': `USER#${userId}`, ':skPrefix': 'SET#' },
     }));
-    return ok(result.Items ?? []);
+    const sets = result.Items ?? [];
+
+    // Fetch categories for all sets in parallel to compute completeness
+    const QUESTION_VALUES = [100, 200, 300, 400, 500];
+    const catsResults = await Promise.all(
+      sets.map((s: Record<string, unknown>) =>
+        ddb.send(new QueryCommand({
+          TableName: TABLE,
+          KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
+          ExpressionAttributeValues: { ':pk': `SET#${s['setId']}`, ':skPrefix': 'CATEGORY#' },
+        }))
+      )
+    );
+
+    const enriched = sets.map((s: Record<string, unknown>, i: number) => {
+      const categories = (catsResults[i].Items ?? []).map((item: Record<string, unknown>) => item['category'] as Category);
+      const isComplete =
+        categories.length > 0 &&
+        categories.every((cat: Category) =>
+          QUESTION_VALUES.every((val) => {
+            const q = cat.questions.find((q) => q.value === val);
+            return q && q.clue.trim() && q.answer.trim();
+          })
+        );
+      return { ...s, isComplete };
+    });
+
+    return ok(enriched);
   }
 
   // ── GET /sets/{setId} ─────────────────────────────────────────────────────

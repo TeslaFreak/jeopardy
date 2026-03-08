@@ -4,6 +4,7 @@
  * Removes the CONN# item for the disconnected connection.
  * If the disconnecting player was mid-game, broadcasts PLAYER_LEFT.
  * If the host disconnects, marks the room as ended and notifies all players.
+ * TV connections are silently cleaned up.
  */
 
 import { APIGatewayProxyResultV2, APIGatewayProxyWebsocketEventV2 } from 'aws-lambda';
@@ -16,7 +17,7 @@ import {
   GetCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { ApiGatewayManagementApiClient, PostToConnectionCommand } from '@aws-sdk/client-apigatewaymanagementapi';
-import { ServerAction, WsMessage } from '../shared/types';
+import { ServerAction, WsMessage, ConnectionRole } from '../shared/types';
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const GAMES_TABLE = process.env.GAMES_TABLE!;
@@ -47,9 +48,6 @@ export const handler = async (
   const connId = event.requestContext.connectionId;
   const { domainName, stage } = event.requestContext;
 
-  // Find which room this connection belongs to (scan the CONN# record by GSI or query)
-  // We stored roomCode on the CONN item, but we need to find it first.
-  // Use a global secondary index: GSI1 PK = connId
   const connResult = await ddb.send(new QueryCommand({
     TableName: GAMES_TABLE,
     IndexName: 'ConnIdIndex',
@@ -59,10 +57,20 @@ export const handler = async (
   const connItem = connResult.Items?.[0];
   if (!connItem) return { statusCode: 200, body: 'OK' };
 
-  const { roomCode, isHost } = connItem;
+  const { roomCode } = connItem;
+  const role: ConnectionRole = connItem.role ?? (connItem.isHost ? 'host' : 'player');
   const apigw = apigwClient(domainName, stage);
 
-  if (isHost) {
+  // TV disconnects — silently clean up
+  if (role === 'tv') {
+    await ddb.send(new DeleteCommand({
+      TableName: GAMES_TABLE,
+      Key: { PK: `ROOM#${roomCode}`, SK: `CONN#${connId}` },
+    }));
+    return { statusCode: 200, body: 'OK' };
+  }
+
+  if (role === 'host') {
     // Host left — delete their record, mark room ended, notify everyone
     await ddb.send(new DeleteCommand({
       TableName: GAMES_TABLE,

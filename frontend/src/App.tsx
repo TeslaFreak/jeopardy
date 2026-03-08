@@ -14,6 +14,7 @@ import Sets from "./pages/Sets";
 import SetBuilder from "./pages/SetBuilder";
 import HostGame from "./pages/HostGame";
 import Play from "./pages/Play";
+import TV from "./pages/TV";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { authStatus } = useAuthenticator((ctx) => [ctx.authStatus]);
@@ -81,6 +82,7 @@ export default function App() {
           }
         />
         <Route path="/play" element={<Play />} />
+        <Route path="/tv" element={<TV />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

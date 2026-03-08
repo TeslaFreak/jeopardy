@@ -15,13 +15,40 @@ export interface Question {
   answer: string;
 }
 
+// ─── Game config ────────────────────────────────────────────────────────────────
+
+export interface TimerSetting {
+  enabled: boolean;
+  seconds: number;
+}
+
+export interface GameConfig {
+  buzzInTimer: TimerSetting;
+  stealTimer: TimerSetting;
+  wrongAnswerPenalty: 'subtract' | 'nothing';
+}
+
+export const DEFAULT_GAME_CONFIG: GameConfig = {
+  buzzInTimer: { enabled: true, seconds: 20 },
+  stealTimer: { enabled: true, seconds: 10 },
+  wrongAnswerPenalty: 'subtract',
+};
+
+// ─── Connection role ────────────────────────────────────────────────────────────
+
+export type ConnectionRole = 'host' | 'player' | 'tv';
+
+// ─── WebSocket message actions ──────────────────────────────────────────────────
+
 export type ClientAction =
   | 'JOIN_ROOM'
   | 'START_GAME'
   | 'SELECT_QUESTION'
   | 'BUZZ_IN'
   | 'JUDGE_ANSWER'
-  | 'END_GAME';
+  | 'END_GAME'
+  | 'STEAL_EXPIRED'
+  | 'BUZZ_TIMER_EXPIRED';
 
 export type ServerAction =
   | 'PLAYER_JOINED'
@@ -33,6 +60,8 @@ export type ServerAction =
   | 'BACK_TO_BOARD'
   | 'GAME_OVER'
   | 'GAME_STATE_SYNC'
+  | 'STEAL_OPEN'
+  | 'REVEAL_ANSWER'
   | 'ERROR';
 
 export interface WsMessage<T = unknown> {

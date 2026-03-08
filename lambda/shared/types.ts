@@ -21,6 +21,31 @@ export interface Question {
   answer: string;
 }
 
+// ─── Game config ────────────────────────────────────────────────────────────────
+
+export interface TimerSetting {
+  enabled: boolean;
+  seconds: number;
+}
+
+export interface GameConfig {
+  buzzInTimer: TimerSetting;
+  stealTimer: TimerSetting;
+  wrongAnswerPenalty: 'subtract' | 'nothing';
+}
+
+export const DEFAULT_GAME_CONFIG: GameConfig = {
+  buzzInTimer: { enabled: true, seconds: 20 },
+  stealTimer: { enabled: true, seconds: 10 },
+  wrongAnswerPenalty: 'subtract',
+};
+
+// ─── Connection role ────────────────────────────────────────────────────────────
+
+export type ConnectionRole = 'host' | 'player' | 'tv';
+
+// ─── Room & player ──────────────────────────────────────────────────────────────
+
 export interface Room {
   roomCode: string;
   setId: string;
@@ -28,6 +53,10 @@ export interface Room {
   status: 'lobby' | 'active' | 'ended';
   board?: Category[];
   usedQuestions: string[]; // `${categorySlug}#${value}`
+  config?: GameConfig;
+  failedBuzzPlayers: string[]; // connIds who already guessed wrong on current question
+  activeQuestion?: { categorySlug: string; value: number } | null;
+  buzzedConnId?: string | null;
   ttl: number;
 }
 
@@ -35,7 +64,7 @@ export interface Player {
   connId: string;
   playerName: string;
   score: number;
-  isHost: boolean;
+  role: ConnectionRole;
 }
 
 // ─── WebSocket message actions ────────────────────────────────────────────────
@@ -46,7 +75,9 @@ export type ClientAction =
   | 'SELECT_QUESTION'
   | 'BUZZ_IN'
   | 'JUDGE_ANSWER'
-  | 'END_GAME';
+  | 'END_GAME'
+  | 'STEAL_EXPIRED'
+  | 'BUZZ_TIMER_EXPIRED';
 
 export type ServerAction =
   | 'PLAYER_JOINED'
@@ -58,6 +89,8 @@ export type ServerAction =
   | 'BACK_TO_BOARD'
   | 'GAME_OVER'
   | 'GAME_STATE_SYNC'
+  | 'STEAL_OPEN'
+  | 'REVEAL_ANSWER'
   | 'ERROR';
 
 export interface WsMessage<T = unknown> {
@@ -83,15 +116,20 @@ export interface JudgeAnswerPayload {
   value: number;
 }
 
+export interface StartGamePayload {
+  config?: Partial<GameConfig>;
+}
+
 // ─── Server → Client payloads ─────────────────────────────────────────────────
 
 export interface PlayerJoinedPayload {
-  players: { connId: string; playerName: string; score: number; isHost: boolean }[];
+  players: { connId: string; playerName: string; score: number; role: ConnectionRole }[];
   scores: Record<string, number>;
 }
 
 export interface GameStartedPayload {
   board: Category[];
+  config: GameConfig;
 }
 
 export interface QuestionActivePayload {
@@ -104,6 +142,7 @@ export interface QuestionActivePayload {
 export interface PlayerBuzzedPayload {
   playerId: string;
   playerName: string;
+  deadline?: number; // epoch ms when buzz-in timer expires
 }
 
 export interface ScoreUpdatePayload {
@@ -116,4 +155,16 @@ export interface BackToBoardPayload {
 
 export interface GameOverPayload {
   finalScores: Record<string, number>;
+  allQuestionsComplete?: boolean;
+}
+
+export interface StealOpenPayload {
+  deadline: number; // epoch ms when steal timer expires
+  failedBuzzPlayers: string[];
+}
+
+export interface RevealAnswerPayload {
+  answer: string;
+  wasCorrect: boolean;
+  correctPlayerName?: string;
 }

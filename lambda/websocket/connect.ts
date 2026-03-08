@@ -2,9 +2,10 @@
  * WebSocket $connect handler
  *
  * Query string parameters:
- *   roomCode   – required; the 6-char room code from POST /sets/{setId}/host
+ *   roomCode   – required; the 4-char room code from POST /sets/{setId}/host
  *   playerName – required for players; omit or set to "__host__" for the host
- *   isHost     – "true" if this is the host connection
+ *   role       – "host" | "player" | "tv" (default "player")
+ *   isHost     – legacy; "true" maps to role=host
  *
  * Stores a CONN# record in GamesTable and (if host) sets hostConnId on META.
  */
@@ -23,6 +24,7 @@ import {
   PutCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
+import { ConnectionRole } from '../shared/types';
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const GAMES_TABLE = process.env.GAMES_TABLE!;
@@ -34,7 +36,14 @@ export const handler = async (
   const qs = event.queryStringParameters ?? {};
   const roomCode = qs['roomCode'];
   const playerName = qs['playerName'] ?? 'Anonymous';
-  const isHost = qs['isHost'] === 'true';
+
+  // Determine role: explicit role param, or legacy isHost mapping
+  let role: ConnectionRole = 'player';
+  if (qs['role'] === 'host' || qs['role'] === 'tv') {
+    role = qs['role'];
+  } else if (qs['isHost'] === 'true') {
+    role = 'host';
+  }
 
   if (!roomCode) return { statusCode: 400, body: 'roomCode required' };
 
@@ -49,6 +58,7 @@ export const handler = async (
   const ttl = Math.floor(Date.now() / 1000) + 24 * 60 * 60;
 
   // Store connection record
+  const displayName = role === 'host' ? '__host__' : role === 'tv' ? '__tv__' : playerName;
   await ddb.send(new PutCommand({
     TableName: GAMES_TABLE,
     Item: {
@@ -56,15 +66,16 @@ export const handler = async (
       SK: `CONN#${connId}`,
       connId,
       roomCode,
-      playerName: isHost ? '__host__' : playerName,
+      playerName: displayName,
       score: 0,
-      isHost,
+      role,
+      isHost: role === 'host', // backward compat field
       ttl,
     },
   }));
 
   // If host, update META with hostConnId
-  if (isHost) {
+  if (role === 'host') {
     await ddb.send(new UpdateCommand({
       TableName: GAMES_TABLE,
       Key: { PK: `ROOM#${roomCode}`, SK: 'META' },

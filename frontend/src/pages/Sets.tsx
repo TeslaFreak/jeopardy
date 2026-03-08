@@ -19,6 +19,7 @@ interface SetMeta {
   title: string;
   createdAt: string;
   updatedAt: string;
+  isComplete: boolean;
 }
 
 export default function Sets() {
@@ -160,12 +161,25 @@ export default function Sets() {
                     Edit
                   </Button>
                 </Link>
-                <Link to={`/sets/${s.setId}/host`} className="flex-1">
-                  <Button variant="gold" size="sm" className="w-full gap-1.5">
+                <div className="flex-1">
+                  <Button
+                    variant="gold"
+                    size="sm"
+                    className="w-full gap-1.5"
+                    disabled={!s.isComplete}
+                    title={
+                      !s.isComplete
+                        ? "Complete all questions before hosting"
+                        : undefined
+                    }
+                    onClick={() =>
+                      s.isComplete && navigate(`/sets/${s.setId}/host`)
+                    }
+                  >
                     <Tv2 className="w-3.5 h-3.5" />
                     Host
                   </Button>
-                </Link>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"

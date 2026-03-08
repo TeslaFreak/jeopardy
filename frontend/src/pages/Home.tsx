@@ -61,7 +61,7 @@ export default function Home() {
               type="submit"
               variant="gold"
               size="lg"
-              disabled={roomCode.trim().length < 6}
+              disabled={roomCode.trim().length < 4}
               className="w-full"
             >
               Join Game <ChevronRight className="w-4 h-4" />
