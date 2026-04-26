@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import { Button } from "@/components/ui/button";
-import { LogOut, Zap } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 export function Navbar() {
   const location = useLocation();
@@ -10,11 +10,10 @@ export function Navbar() {
   const isPlayPage = location.pathname === "/play";
 
   return (
-    <nav className="sticky top-0 z-40 border-b border-white/10 bg-navy-2/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-40 border-b border-outline-variant/20 bg-navy/80 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-        <Link to="/" className="flex items-center gap-2 group">
-          <Zap className="h-5 w-5 text-gold group-hover:drop-shadow-[0_0_8px_rgba(245,197,24,0.8)] transition-all" />
-          <span className="font-display text-xl font-bold tracking-wide text-gold group-hover:drop-shadow-[0_0_8px_rgba(245,197,24,0.6)] transition-all">
+        <Link to="/" className="group">
+          <span className="font-display text-xl font-black italic uppercase tracking-tight text-gold drop-shadow-[0_0_10px_rgba(255,254,172,0.4)] group-hover:drop-shadow-[0_0_16px_rgba(255,254,172,0.8)] transition-all">
             JEOPARDY!
           </span>
         </Link>
@@ -23,7 +22,11 @@ export function Navbar() {
           {!isPlayPage && isAuthenticated && (
             <>
               <Link to="/sets">
-                <Button variant="ghost" size="sm">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gold/70 hover:text-gold uppercase tracking-wider text-xs font-bold"
+                >
                   My Sets
                 </Button>
               </Link>
@@ -31,7 +34,7 @@ export function Navbar() {
                 variant="ghost"
                 size="sm"
                 onClick={signOut}
-                className="gap-1.5"
+                className="gap-1.5 text-outline hover:text-gold/70"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 Sign Out
@@ -40,7 +43,11 @@ export function Navbar() {
           )}
           {!isPlayPage && !isAuthenticated && (
             <Link to="/login">
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                className="uppercase tracking-wider text-xs"
+              >
                 Host Sign In
               </Button>
             </Link>

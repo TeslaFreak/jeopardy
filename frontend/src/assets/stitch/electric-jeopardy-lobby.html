@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Electric Broadcast - Lobby</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Be+Vietnam+Pro:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-container": "#ff067f",
+              "surface-container-low": "#1b0a31",
+              "on-secondary": "#004d57",
+              "on-error-container": "#ffd2c8",
+              "background": "#150629",
+              "on-surface-variant": "#b7a3cf",
+              "inverse-primary": "#626200",
+              "surface-dim": "#150629",
+              "inverse-surface": "#fff7ff",
+              "tertiary-dim": "#e30071",
+              "tertiary-fixed": "#ff8eae",
+              "error": "#ff7351",
+              "on-tertiary": "#47001f",
+              "primary": "#fffeac",
+              "on-secondary-fixed-variant": "#005964",
+              "on-background": "#efdfff",
+              "secondary-dim": "#00d4ec",
+              "surface-bright": "#372056",
+              "on-tertiary-fixed-variant": "#760037",
+              "on-primary-fixed-variant": "#646400",
+              "primary-fixed": "#f3f300",
+              "secondary-fixed-dim": "#00d7f0",
+              "primary-fixed-dim": "#e4e400",
+              "secondary": "#00e3fd",
+              "tertiary": "#ff6b9b",
+              "outline": "#806e96",
+              "error-dim": "#d53d18",
+              "surface-container-lowest": "#000000",
+              "outline-variant": "#514166",
+              "on-secondary-fixed": "#003a42",
+              "on-tertiary-container": "#000000",
+              "primary-dim": "#f0f000",
+              "secondary-container": "#006875",
+              "surface-container-highest": "#301a4d",
+              "on-surface": "#efdfff",
+              "on-tertiary-fixed": "#380017",
+              "on-secondary-container": "#e8fbff",
+              "surface-tint": "#fffeac",
+              "on-error": "#450900",
+              "secondary-fixed": "#26e6ff",
+              "primary-container": "#f3f300",
+              "on-primary-container": "#5a5a00",
+              "surface-container-high": "#291543",
+              "surface-variant": "#301a4d",
+              "on-primary": "#626200",
+              "surface-container": "#22103a",
+              "surface": "#150629",
+              "error-container": "#b92902",
+              "on-primary-fixed": "#474700",
+              "tertiary-fixed-dim": "#ff75a0",
+              "inverse-on-surface": "#5e4e74"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Be Vietnam Pro"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .drop-shadow-glow {
+            filter: drop-shadow(0 0 10px rgba(255, 254, 172, 0.8));
+        }
+        .bg-mesh {
+            background-color: #150629;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 227, 253, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(255, 6, 127, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(255, 254, 172, 0.1) 0px, transparent 50%);
+        }
+        .neon-border-glow {
+            box-shadow: 0 0 20px rgba(0, 227, 253, 0.3), inset 0 0 10px rgba(0, 227, 253, 0.2);
+        }
+        .glass-dome {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 100%);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen selection:bg-secondary selection:text-on-secondary overflow-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4 border-none bg-gradient-to-b from-[#150629] to-transparent shadow-[0_4px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+<div class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight uppercase text-2xl font-black italic tracking-tighter text-[#fffeac] drop-shadow-[0_0_10px_rgba(255,254,172,0.5)]">
+            ELECTRIC BROADCAST
+        </div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex items-center gap-8">
+<span class="font-headline font-bold uppercase tracking-tight text-[#fffeac] drop-shadow-glow cursor-pointer transition-transform hover:scale-105">Lobby</span>
+<span class="font-headline font-bold uppercase tracking-tight text-[#00e3fd]/60 cursor-pointer transition-transform hover:text-[#fffeac] hover:scale-105">Board</span>
+<span class="font-headline font-bold uppercase tracking-tight text-[#00e3fd]/60 cursor-pointer transition-transform hover:text-[#fffeac] hover:scale-105">Buzz</span>
+</div>
+<div class="flex items-center gap-4 text-[#fffeac]">
+<span class="text-xs font-bold tracking-widest uppercase bg-surface-container-highest px-3 py-1 rounded-full border border-outline-variant/30">ROOM: DXTR</span>
+<div class="flex gap-2">
+<span class="material-symbols-outlined cursor-pointer hover:scale-110 transition-transform">volume_up</span>
+<span class="material-symbols-outlined cursor-pointer hover:scale-110 transition-transform">settings</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="relative w-full h-screen flex flex-col items-center justify-center bg-mesh px-4 pt-20 pb-32">
+<!-- Instruction Section -->
+<div class="text-center mb-8 animate-pulse">
+<p class="font-headline text-secondary text-lg md:text-xl font-bold uppercase tracking-[0.2em] mb-2">JOIN THE SHOW</p>
+<h1 class="font-headline text-primary text-4xl md:text-6xl font-black tracking-tighter drop-shadow-glow">
+                JEOPARDY.TV
+            </h1>
+</div>
+<!-- Room Code Centerpiece -->
+<div class="relative group">
+<div class="absolute -inset-1 bg-gradient-to-r from-secondary via-primary to-tertiary rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+<div class="relative bg-surface-container-low border border-outline-variant/20 px-12 py-8 rounded-xl flex flex-col items-center backdrop-blur-2xl neon-border-glow -rotate-1 transform transition-transform hover:rotate-0">
+<span class="font-body text-on-surface-variant text-xs font-bold uppercase tracking-widest mb-2">ROOM CODE</span>
+<div class="flex gap-4">
+<span class="font-headline text-8xl md:text-9xl font-black text-primary tracking-tighter drop-shadow-glow">D</span>
+<span class="font-headline text-8xl md:text-9xl font-black text-primary tracking-tighter drop-shadow-glow">X</span>
+<span class="font-headline text-8xl md:text-9xl font-black text-primary tracking-tighter drop-shadow-glow">T</span>
+<span class="font-headline text-8xl md:text-9xl font-black text-primary tracking-tighter drop-shadow-glow">R</span>
+</div>
+</div>
+</div>
+<!-- Players Grid (Asymmetric Bento Style) -->
+<div class="mt-12 w-full max-w-5xl grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 items-end">
+<!-- Player 1 -->
+<div class="flex flex-col items-center transform -rotate-2 hover:rotate-0 transition-all duration-300">
+<div class="w-20 h-20 bg-secondary-container rounded-xl flex items-center justify-center shadow-lg mb-2 relative overflow-hidden">
+<div class="absolute inset-0 glass-dome"></div>
+<span class="material-symbols-outlined text-4xl text-on-secondary-container" style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+</div>
+<span class="font-headline font-bold text-xs uppercase bg-secondary text-on-secondary px-3 py-1 rounded-full shadow-lg">The Brainiac</span>
+</div>
+<!-- Player 2 -->
+<div class="flex flex-col items-center transform rotate-3 hover:rotate-0 transition-all duration-300">
+<div class="w-24 h-24 bg-tertiary-container rounded-xl flex items-center justify-center shadow-lg mb-2 relative overflow-hidden border-4 border-tertiary">
+<div class="absolute inset-0 glass-dome"></div>
+<span class="material-symbols-outlined text-5xl text-on-tertiary-container" style="font-variation-settings: 'FILL' 1;">pets</span>
+</div>
+<span class="font-headline font-bold text-xs uppercase bg-tertiary text-on-tertiary px-3 py-1 rounded-full shadow-lg">Sassy Cat</span>
+</div>
+<!-- Player 3 -->
+<div class="flex flex-col items-center transform -rotate-1 hover:rotate-0 transition-all duration-300">
+<div class="w-20 h-20 bg-surface-container-highest rounded-xl flex items-center justify-center shadow-lg mb-2 relative overflow-hidden">
+<div class="absolute inset-0 glass-dome"></div>
+<span class="material-symbols-outlined text-4xl text-primary" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</div>
+<span class="font-headline font-bold text-xs uppercase bg-surface-bright text-on-surface px-3 py-1 rounded-full shadow-lg">Robo-Buzz</span>
+</div>
+<!-- Player 4 -->
+<div class="flex flex-col items-center transform rotate-6 hover:rotate-0 transition-all duration-300">
+<div class="w-22 h-22 bg-primary-container rounded-xl flex items-center justify-center shadow-lg mb-2 relative overflow-hidden">
+<div class="absolute inset-0 glass-dome"></div>
+<span class="material-symbols-outlined text-4xl text-on-primary-container" style="font-variation-settings: 'FILL' 1;">celebration</span>
+</div>
+<span class="font-headline font-bold text-xs uppercase bg-primary text-on-primary px-3 py-1 rounded-full shadow-lg">Party Phil</span>
+</div>
+<!-- Player 5 -->
+<div class="flex flex-col items-center transform -rotate-3 hover:rotate-0 transition-all duration-300">
+<div class="w-20 h-20 bg-error-container rounded-xl flex items-center justify-center shadow-lg mb-2 relative overflow-hidden">
+<div class="absolute inset-0 glass-dome"></div>
+<span class="material-symbols-outlined text-4xl text-on-error-container" style="font-variation-settings: 'FILL' 1;">skull</span>
+</div>
+<span class="font-headline font-bold text-xs uppercase bg-error text-on-error px-3 py-1 rounded-full shadow-lg">Doom Scroller</span>
+</div>
+<!-- Waiting Slot -->
+<div class="flex flex-col items-center opacity-40">
+<div class="w-20 h-20 border-2 border-dashed border-outline-variant rounded-xl flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-2xl text-outline">add</span>
+</div>
+<span class="font-headline font-bold text-[10px] uppercase text-outline">Waiting...</span>
+</div>
+</div>
+<!-- Start Button -->
+<div class="mt-16 relative">
+<button class="group relative px-12 py-5 bg-primary rounded-full text-on-primary font-headline text-2xl font-black uppercase tracking-tighter flex items-center gap-4 shadow-[0_0_30px_rgba(255,254,172,0.4)] hover:shadow-[0_0_50px_rgba(255,254,172,0.6)] transition-all transform hover:scale-105 active:scale-95">
+<div class="absolute inset-0 rounded-full glass-dome"></div>
+                START GAME
+                <span class="material-symbols-outlined text-3xl">play_arrow</span>
+</button>
+<!-- Animated decorative element -->
+<div class="absolute -top-4 -right-4 w-8 h-8 bg-tertiary rounded-full animate-bounce blur-sm opacity-60"></div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-[#150629]/90 backdrop-blur-2xl rounded-t-[3rem] shadow-[0_-10px_40px_rgba(0,227,253,0.15)] md:hidden">
+<div class="flex flex-col items-center justify-center bg-[#fffeac] text-[#150629] rounded-full px-6 py-2 shadow-[0_0_20px_rgba(255,254,172,0.8)]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">groups</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-bold uppercase tracking-widest">Lobby</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#00e3fd] opacity-50 hover:opacity-100 hover:drop-shadow-[0_0_8px_rgba(0,227,253,0.5)] transition-all">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-bold uppercase tracking-widest">Board</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#00e3fd] opacity-50 hover:opacity-100 hover:drop-shadow-[0_0_8px_rgba(0,227,253,0.5)] transition-all">
+<span class="material-symbols-outlined">sensors</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-bold uppercase tracking-widest">Buzz</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#00e3fd] opacity-50 hover:opacity-100 hover:drop-shadow-[0_0_8px_rgba(0,227,253,0.5)] transition-all">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-bold uppercase tracking-widest">Scores</span>
+</div>
+</nav>
+<!-- Background Decoration -->
+<div class="fixed inset-0 pointer-events-none z-0">
+<div class="absolute top-1/4 -left-20 w-96 h-96 bg-secondary/5 rounded-full blur-[100px]"></div>
+<div class="absolute bottom-1/4 -right-20 w-96 h-96 bg-tertiary/5 rounded-full blur-[100px]"></div>
+</div>
+</body></html>

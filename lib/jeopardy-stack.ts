@@ -176,7 +176,11 @@ export class JeopardyStack extends cdk.Stack {
     const httpApi = new HttpApi(this, 'HttpApi', {
       apiName: 'JeopardyHttpApi',
       corsPreflight: {
-        allowOrigins: [`https://${domainName}`],
+        allowOrigins: [
+          `https://${domainName}`,
+          'http://localhost:5173',
+          'http://localhost:4173',
+        ],
         allowMethods: [CorsHttpMethod.ANY],
         allowHeaders: ['Authorization', 'Content-Type'],
         maxAge: cdk.Duration.days(1),

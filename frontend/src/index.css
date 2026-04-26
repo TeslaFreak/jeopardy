@@ -1,20 +1,29 @@
-@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,700;0,800;1,700;1,800&family=Be+Vietnam+Pro:wght@400;500;700;900&display=swap");
 @import "tailwindcss";
 
 @theme {
   --color-board: #0c0cd6;
   --color-board-hover: #1a1af0;
   --color-board-dim: #0808a0;
-  --color-gold: #f5c518;
-  --color-gold-hover: #fdd835;
-  --color-gold-dim: #c9a100;
-  --color-navy: #050514;
-  --color-navy-2: #0d0d2b;
-  --color-navy-3: #12124a;
-  --color-surface: #1a1a3e;
-  --color-surface-2: #242450;
-  --font-display: "Oswald", sans-serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-gold: #fffeac;
+  --color-gold-hover: #f3f300;
+  --color-gold-dim: #e4e400;
+  --color-navy: #150629;
+  --color-navy-2: #1b0a31;
+  --color-navy-3: #22103a;
+  --color-surface: #22103a;
+  --color-surface-2: #291543;
+  --color-surface-bright: #372056;
+  --color-secondary: #00e3fd;
+  --color-secondary-dim: #00d4ec;
+  --color-tertiary: #ff6b9b;
+  --color-tertiary-container: #ff067f;
+  --color-outline: #806e96;
+  --color-outline-variant: #514166;
+  --color-on-surface: #efdfff;
+  --color-on-surface-variant: #b7a3cf;
+  --font-display: "Plus Jakarta Sans", sans-serif;
+  --font-sans: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
   --animate-pulse-gold: pulse-gold 2s ease-in-out infinite;
   --animate-flip-in: flip-in 0.4s ease-out;
   --animate-slide-up: slide-up 0.3s ease-out;
@@ -148,9 +157,36 @@ body {
 body {
   font-family: var(--font-sans);
   background-color: var(--color-navy);
-  color: #e8e8f0;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(0, 227, 253, 0.12) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(255, 6, 127, 0.08) 0px, transparent 50%),
+    radial-gradient(
+      at 100% 100%,
+      rgba(255, 254, 172, 0.08) 0px,
+      transparent 50%
+    );
+  background-attachment: fixed;
+  color: #efdfff;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+}
+
+.drop-shadow-glow {
+  filter: drop-shadow(0 0 10px rgba(255, 254, 172, 0.8));
+}
+
+.neon-border-glow {
+  box-shadow:
+    0 0 20px rgba(0, 227, 253, 0.3),
+    inset 0 0 10px rgba(0, 227, 253, 0.15);
+}
+
+.glass-dome {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
 }
 a {
   text-decoration: none;

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Electric Broadcast - Jeopardy</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&amp;family=Be_Vietnam_Pro:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-container": "#ff067f",
+              "surface-container-low": "#1b0a31",
+              "on-secondary": "#004d57",
+              "on-error-container": "#ffd2c8",
+              "background": "#150629",
+              "on-surface-variant": "#b7a3cf",
+              "inverse-primary": "#626200",
+              "surface-dim": "#150629",
+              "inverse-surface": "#fff7ff",
+              "tertiary-dim": "#e30071",
+              "tertiary-fixed": "#ff8eae",
+              "error": "#ff7351",
+              "on-tertiary": "#47001f",
+              "primary": "#fffeac",
+              "on-secondary-fixed-variant": "#005964",
+              "on-background": "#efdfff",
+              "secondary-dim": "#00d4ec",
+              "surface-bright": "#372056",
+              "on-tertiary-fixed-variant": "#760037",
+              "on-primary-fixed-variant": "#646400",
+              "primary-fixed": "#f3f300",
+              "secondary-fixed-dim": "#00d7f0",
+              "primary-fixed-dim": "#e4e400",
+              "secondary": "#00e3fd",
+              "tertiary": "#ff6b9b",
+              "outline": "#806e96",
+              "error-dim": "#d53d18",
+              "surface-container-lowest": "#000000",
+              "outline-variant": "#514166",
+              "on-secondary-fixed": "#003a42",
+              "on-tertiary-container": "#000000",
+              "primary-dim": "#f0f000",
+              "secondary-container": "#006875",
+              "surface-container-highest": "#301a4d",
+              "on-surface": "#efdfff",
+              "on-tertiary-fixed": "#380017",
+              "on-secondary-container": "#e8fbff",
+              "surface-tint": "#fffeac",
+              "on-error": "#450900",
+              "secondary-fixed": "#26e6ff",
+              "primary-container": "#f3f300",
+              "on-primary-container": "#5a5a00",
+              "surface-container-high": "#291543",
+              "surface-variant": "#301a4d",
+              "on-primary": "#626200",
+              "surface-container": "#22103a",
+              "surface": "#150629",
+              "error-container": "#b92902",
+              "on-primary-fixed": "#474700",
+              "tertiary-fixed-dim": "#ff75a0",
+              "inverse-on-surface": "#5e4e74"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Be Vietnam Pro"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .drop-shadow-glow {
+            filter: drop-shadow(0 0 8px rgba(255, 254, 172, 0.6));
+        }
+        .glossy-overlay {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 50%);
+        }
+        .neon-border-glow {
+            box-shadow: inset 0 0 15px rgba(0, 227, 253, 0.2), 0 0 20px rgba(0, 227, 253, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary selection:text-on-primary min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-[#150629]/80 backdrop-blur-xl border-none bg-gradient-to-b from-[#150629] to-transparent shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-black italic tracking-tighter text-[#fffeac] drop-shadow-[0_0_10px_rgba(255,254,172,0.5)] font-['Plus_Jakarta_Sans'] uppercase">ELECTRIC BROADCAST</span>
+</div>
+<div class="hidden md:flex items-center gap-8 font-['Plus_Jakarta_Sans'] font-bold tracking-tight uppercase">
+<a class="text-[#00e3fd]/60 hover:text-[#fffeac] hover:scale-105 transition-transform" href="#">Lobby</a>
+<a class="text-[#fffeac] drop-shadow-glow hover:text-[#fffeac] hover:scale-105 transition-transform" href="#">Board</a>
+<a class="text-[#00e3fd]/60 hover:text-[#fffeac] hover:scale-105 transition-transform" href="#">Buzz</a>
+<a class="text-[#00e3fd]/60 hover:text-[#fffeac] hover:scale-105 transition-transform" href="#">Scores</a>
+</div>
+<div class="flex items-center gap-4">
+<div class="bg-surface-container px-4 py-1.5 rounded-full border border-outline-variant/20 flex items-center gap-2">
+<span class="text-[10px] font-bold text-secondary tracking-widest uppercase">ROOM: DXTR</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-[#fffeac] hover:scale-105 transition-transform duration-75 active:scale-95">
+<span class="material-symbols-outlined">volume_up</span>
+</button>
+<button class="p-2 text-[#fffeac] hover:scale-105 transition-transform duration-75 active:scale-95">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-container to-secondary-container p-0.5">
+<img alt="Current Player Avatar" class="w-full h-full rounded-xl bg-surface-dim" data-alt="Stylized character avatar with neon background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2HZoPkNtfSGsrimAoVTMGyxGB3NrIpBXKPZdXy4q245WuCA3uW9ZuGpW4ByJi1tHmxd6ItslF8t2VTEm3SIoCooaMvtnKkNLljHAijAvXnvGQko2_Uc0PK2Z4ZVkj7P4Lxb3cY2wYriNLfefd8A6evnoVV75tKvp6u_zWtaH02gGSyDrsrOjbwbV6w_tyThG7ehnd0voXM2U7Xi4X4dsphWFHNQT9pqvuSDYhNNUMQONB-93WG8fDm2yE1_ojKl4FxfMMGTbgf_A"/>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-grow pt-24 pb-32 px-4 md:px-8 max-w-7xl mx-auto w-full">
+<!-- Scoreboard Strip -->
+<section class="mb-12 flex flex-wrap justify-center gap-4">
+<!-- Player 1 -->
+<div class="bg-surface-container-high/40 backdrop-blur-md px-6 py-3 rounded-xl border border-primary/20 flex items-center gap-4 shadow-[0_0_30px_rgba(255,254,172,0.05)] -rotate-1">
+<div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center overflow-hidden">
+<img alt="Player 1 Avatar" class="w-10 h-10" data-alt="Cartoon avatar of player one" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWncRjW5BgT4B7dZkbDxLViqlCU3TAGbfT9Y4Of1wQQMEXy7OK2dpyvwNScCz_x6vbAxhw6MQZYY1kiYJFMHgtzSn68Mm-6R45jaCXwY3xY8bd2JN50XfSox360C5mYApPgld64OhCNr2nHgugIkQ1STFQSXnw2nd-Eu6NGsY2_vzrIs39s0OhHCWEHeIGz4T6E2OgK_Z1zLFBZayMhEQwzIMdymAO6vWk7xs4aJTZ2_EfNeaaD3xMvVCjKf82I83nTvDJSaO8-c0"/>
+</div>
+<div>
+<p class="text-[10px] font-black uppercase tracking-tighter text-on-surface-variant">Player 1</p>
+<p class="text-2xl font-black text-primary font-headline tracking-tighter">$1,200</p>
+</div>
+</div>
+<!-- Player 2 (Negative Score) -->
+<div class="bg-surface-container-high/40 backdrop-blur-md px-6 py-3 rounded-xl border border-error/20 flex items-center gap-4 shadow-[0_0_30px_rgba(255,115,81,0.05)] rotate-1">
+<div class="w-12 h-12 rounded-lg bg-error/20 flex items-center justify-center overflow-hidden">
+<img alt="Player 2 Avatar" class="w-10 h-10" data-alt="Cartoon avatar of player two" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsSFriC6pNnWbvdlLZE7SU7j0_Ytt0BRIpDrDIPKhKIucteMntQPzeyJGEbOnX98JSoLEh95ilS8Rx-xjjmdMx_XpuE3ZPhwYS69tz9__WuCY-K74crFrKA1duE6Jyf4C8xWC12w-r7UxH3ZvXabhkGTBZnRkxHPgEvEshd2Zf0_q69rKH8Bdwb3sI4KLtjioSv9EoXis2jsOZDUthxZi6g5rlTz3iiQO0FX4__3B515ZCYI695E2y_Ky7KOms9qMQx0PvhktDwqA"/>
+</div>
+<div>
+<p class="text-[10px] font-black uppercase tracking-tighter text-on-surface-variant">Player 2</p>
+<p class="text-2xl font-black text-error font-headline tracking-tighter">-$200</p>
+</div>
+</div>
+<!-- Player 3 -->
+<div class="bg-surface-container-high/40 backdrop-blur-md px-6 py-3 rounded-xl border border-secondary/20 flex items-center gap-4 shadow-[0_0_30px_rgba(0,227,253,0.05)] -rotate-1">
+<div class="w-12 h-12 rounded-lg bg-secondary/20 flex items-center justify-center overflow-hidden">
+<img alt="Player 3 Avatar" class="w-10 h-10" data-alt="Cartoon avatar of player three" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfCz4DsJpvMWXGiSjDYHcfmrIyBPdDnKEChXHPpP5khDWPR787YczhwZ6gevH3WaHr7n_joyKpyLuDXzOVuGkrujcAoHuL-eKdvPcKscIMYmPZx4J9pcZyKd2W9Y5fv55JpE-4dnZ6TdMktEOleIosgpvW2pJPPw7ZePWDHmxLItWRu1AP3OdsOEdb6W_gTmLbkNKcIfpknN_iicFObKt-5YBz3WPMU8fTn08AsXCOSOhxuYHWlSwIaPtnRX9tqNcxXS_5dxOH1ns"/>
+</div>
+<div>
+<p class="text-[10px] font-black uppercase tracking-tighter text-on-surface-variant">Player 3</p>
+<p class="text-2xl font-black text-secondary font-headline tracking-tighter">$800</p>
+</div>
+</div>
+</section>
+<!-- Jeopardy Grid -->
+<div class="grid grid-cols-2 md:grid-cols-6 gap-3 md:gap-6">
+<!-- Category Columns -->
+<!-- Category 1 -->
+<div class="space-y-4">
+<div class="h-24 flex items-center justify-center text-center p-2 bg-surface-container-highest rounded-xl mb-6 transform -rotate-2 shadow-lg">
+<h3 class="font-headline font-extrabold text-sm md:text-base text-primary uppercase leading-tight tracking-tight">80s Hair Metal</h3>
+</div>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline drop-shadow-sm">$200</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$400</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$600</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$800</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$1000</span>
+</button>
+</div>
+<!-- Category 2 -->
+<div class="space-y-4">
+<div class="h-24 flex items-center justify-center text-center p-2 bg-surface-container-highest rounded-xl mb-6 transform rotate-1 shadow-lg">
+<h3 class="font-headline font-extrabold text-sm md:text-base text-primary uppercase leading-tight tracking-tight">What's That Smell?</h3>
+</div>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$200</span>
+</button>
+<!-- Taken state -->
+<div class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-lowest/50 rounded-xl flex items-center justify-center border border-outline-variant/10 opacity-30 grayscale">
+<span class="material-symbols-outlined text-4xl">check_circle</span>
+</div>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$600</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$800</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$1000</span>
+</button>
+</div>
+<!-- Category 3 -->
+<div class="space-y-4">
+<div class="h-24 flex items-center justify-center text-center p-2 bg-surface-container-highest rounded-xl mb-6 transform -rotate-1 shadow-lg">
+<h3 class="font-headline font-extrabold text-sm md:text-base text-primary uppercase leading-tight tracking-tight">Useless Trivia</h3>
+</div>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$200</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$400</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$600</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-tertiary rounded-xl flex flex-col items-center justify-center relative overflow-hidden group hover:scale-110 transition-all duration-300 shadow-[0_0_40px_rgba(255,107,155,0.4)] z-10 rotate-2">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-[10px] font-black uppercase text-white mb-1">Daily Double!</span>
+<span class="text-2xl md:text-3xl font-black text-white font-headline">$800</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$1000</span>
+</button>
+</div>
+<!-- Category 4 -->
+<div class="space-y-4">
+<div class="h-24 flex items-center justify-center text-center p-2 bg-surface-container-highest rounded-xl mb-6 transform rotate-2 shadow-lg">
+<h3 class="font-headline font-extrabold text-sm md:text-base text-primary uppercase leading-tight tracking-tight">Dogs vs. Cats</h3>
+</div>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$200</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$400</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$600</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$800</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$1000</span>
+</button>
+</div>
+<!-- Category 5 -->
+<div class="space-y-4">
+<div class="h-24 flex items-center justify-center text-center p-2 bg-surface-container-highest rounded-xl mb-6 transform -rotate-2 shadow-lg">
+<h3 class="font-headline font-extrabold text-sm md:text-base text-primary uppercase leading-tight tracking-tight">Internet Slang</h3>
+</div>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$200</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$400</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$600</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$800</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$1000</span>
+</button>
+</div>
+<!-- Category 6 -->
+<div class="space-y-4">
+<div class="h-24 flex items-center justify-center text-center p-2 bg-surface-container-highest rounded-xl mb-6 transform rotate-3 shadow-lg">
+<h3 class="font-headline font-extrabold text-sm md:text-base text-primary uppercase leading-tight tracking-tight">Movie Quotes</h3>
+</div>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$200</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$400</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$600</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$800</span>
+</button>
+<button class="w-full aspect-[4/3] md:aspect-[5/3] bg-surface-container-high rounded-xl flex items-center justify-center relative overflow-hidden group hover:scale-105 transition-all duration-300 neon-border-glow">
+<div class="absolute inset-0 glossy-overlay"></div>
+<span class="text-2xl md:text-3xl font-black text-secondary font-headline">$1000</span>
+</button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-[#150629]/90 backdrop-blur-2xl rounded-t-[3rem] shadow-[0_-10px_40px_rgba(0,227,253,0.15)]">
+<a class="flex flex-col items-center justify-center text-[#00e3fd] opacity-50 hover:opacity-100 hover:drop-shadow-[0_0_8px_rgba(0,227,253,0.5)] transition-all" href="#">
+<span class="material-symbols-outlined mb-1">groups</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-bold uppercase tracking-widest">Lobby</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#fffeac] text-[#150629] rounded-full px-6 py-2 shadow-[0_0_20px_rgba(255,254,172,0.8)] animate-bounce-short" href="#">
+<span class="material-symbols-outlined mb-1">grid_view</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-bold uppercase tracking-widest">Board</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#00e3fd] opacity-50 hover:opacity-100 hover:drop-shadow-[0_0_8px_rgba(0,227,253,0.5)] transition-all" href="#">
+<span class="material-symbols-outlined mb-1">sensors</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-bold uppercase tracking-widest">Buzz</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#00e3fd] opacity-50 hover:opacity-100 hover:drop-shadow-[0_0_8px_rgba(0,227,253,0.5)] transition-all" href="#">
+<span class="material-symbols-outlined mb-1">leaderboard</span>
+<span class="font-['Be_Vietnam_Pro'] text-[10px] font-bold uppercase tracking-widest">Scores</span>
+</a>
+</nav>
+<!-- Floating Atmosphere Elements -->
+<div class="fixed top-1/4 -left-20 w-64 h-64 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="fixed bottom-1/4 -right-20 w-64 h-64 bg-secondary/10 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-surface/50 mix-blend-overlay pointer-events-none opacity-20">
+<!-- Optional: Background grain texture can be simulated here if needed -->
+</div>
+</body></html>

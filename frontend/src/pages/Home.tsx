@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Zap, Users, Tv2, ChevronRight } from "lucide-react";
+import { ChevronRight, Tv2 } from "lucide-react";
 
 export default function Home() {
   const { authStatus } = useAuthenticator((ctx) => [ctx.authStatus]);
@@ -18,33 +18,39 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center px-4 py-20">
+    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center px-4 py-20 overflow-hidden relative">
+      {/* Ambient background blobs */}
+      <div className="fixed inset-0 pointer-events-none -z-10">
+        <div className="absolute top-1/4 -left-20 w-96 h-96 rounded-full bg-secondary/5 blur-[100px]" />
+        <div className="absolute bottom-1/4 -right-20 w-96 h-96 rounded-full bg-tertiary/5 blur-[100px]" />
+      </div>
+
       {/* Hero */}
-      <div className="mb-10 sm:mb-16 text-center animate-[fade-in_0.6s_ease-out]">
-        <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gold/10 border border-gold/30 mb-4 sm:mb-6 animate-[pulse-gold_3s_ease-in-out_infinite]">
-          <Zap className="w-8 h-8 sm:w-10 sm:h-10 text-gold" />
-        </div>
-        <h1 className="font-display text-5xl sm:text-7xl font-bold text-gold tracking-widest mb-3 drop-shadow-[0_0_40px_rgba(245,197,24,0.5)]">
+      <div className="mb-12 text-center animate-[fade-in_0.6s_ease-out]">
+        <p className="font-display text-secondary text-sm font-bold uppercase tracking-[0.3em] mb-3">
+          JOIN THE SHOW
+        </p>
+        <h1 className="font-display text-6xl sm:text-8xl font-black italic tracking-tighter text-gold drop-shadow-[0_0_40px_rgba(255,254,172,0.4)] mb-3">
           JEOPARDY!
         </h1>
-        <p className="text-white/60 text-lg max-w-sm mx-auto leading-relaxed">
+        <p className="text-outline text-sm max-w-xs mx-auto">
           Host trivia nights with your friends — Jackbox‑style.
         </p>
       </div>
 
       {/* Cards */}
-      <div className="w-full max-w-2xl grid md:grid-cols-2 gap-6 animate-[slide-up_0.5s_ease-out]">
+      <div className="w-full max-w-2xl grid md:grid-cols-2 gap-5 animate-[slide-up_0.5s_ease-out]">
         {/* Join Game */}
-        <div className="rounded-2xl border border-white/10 bg-surface p-6 flex flex-col gap-4 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+        <div className="rounded-2xl border border-outline-variant/30 bg-navy-3 p-6 flex flex-col gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-board/30 border border-board/40 flex items-center justify-center">
-              <Users className="w-5 h-5 text-blue-300" />
+            <div className="w-10 h-10 rounded-xl bg-secondary/10 border border-secondary/20 flex items-center justify-center">
+              <span className="text-secondary text-lg">⚡</span>
             </div>
             <div>
-              <h2 className="font-display text-lg font-semibold text-white">
+              <h2 className="font-display text-base font-bold uppercase tracking-wider text-gold">
                 Join a Game
               </h2>
-              <p className="text-xs text-white/50">
+              <p className="text-xs text-outline">
                 Enter the room code to play
               </p>
             </div>
@@ -55,14 +61,14 @@ export default function Home() {
               onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
               placeholder="ROOM CODE"
               maxLength={6}
-              className="text-center text-2xl font-display tracking-[0.4em] font-bold uppercase h-14 bg-navy-3 border-gold/20 focus:border-gold/60 focus:ring-gold/30"
+              className="text-center text-2xl font-display tracking-[0.4em] font-bold uppercase h-14 bg-navy-2 border-outline-variant/40 focus:border-secondary/60 focus:ring-secondary/20 text-gold placeholder:text-outline/40"
             />
             <Button
               type="submit"
               variant="gold"
               size="lg"
               disabled={roomCode.trim().length < 4}
-              className="w-full"
+              className="w-full font-display font-black uppercase tracking-wider rounded-full"
             >
               Join Game <ChevronRight className="w-4 h-4" />
             </Button>
@@ -70,16 +76,16 @@ export default function Home() {
         </div>
 
         {/* Host Game */}
-        <div className="rounded-2xl border border-white/10 bg-surface p-6 flex flex-col gap-4 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+        <div className="rounded-2xl border border-outline-variant/30 bg-navy-3 p-6 flex flex-col gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gold/10 border border-gold/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center">
               <Tv2 className="w-5 h-5 text-gold" />
             </div>
             <div>
-              <h2 className="font-display text-lg font-semibold text-white">
+              <h2 className="font-display text-base font-bold uppercase tracking-wider text-gold">
                 Host a Game
               </h2>
-              <p className="text-xs text-white/50">
+              <p className="text-xs text-outline">
                 Create and run your own game
               </p>
             </div>
@@ -87,13 +93,21 @@ export default function Home() {
           <div className="flex flex-col gap-3 flex-1 justify-end">
             {isAuthenticated ? (
               <Link to="/sets" className="w-full">
-                <Button variant="gold" size="lg" className="w-full">
+                <Button
+                  variant="gold"
+                  size="lg"
+                  className="w-full font-display font-black uppercase tracking-wider rounded-full"
+                >
                   My Game Sets <ChevronRight className="w-4 h-4" />
                 </Button>
               </Link>
             ) : (
               <Link to="/login" className="w-full">
-                <Button variant="outline" size="lg" className="w-full">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full font-display font-black uppercase tracking-wider rounded-full"
+                >
                   Sign In to Host <ChevronRight className="w-4 h-4" />
                 </Button>
               </Link>
@@ -103,7 +117,7 @@ export default function Home() {
       </div>
 
       {/* Footer hint */}
-      <p className="mt-12 text-white/30 text-sm">
+      <p className="mt-10 text-outline/50 text-xs tracking-widest uppercase">
         No account needed to play · Free to host
       </p>
     </div>

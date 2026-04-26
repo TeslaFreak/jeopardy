@@ -6,14 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import {
-  Zap,
-  Trophy,
-  ChevronRight,
-  Loader2,
-  WifiOff,
-  Clock,
-} from "lucide-react";
+import { Trophy, ChevronRight, Loader2, WifiOff, Clock } from "lucide-react";
 
 type PlayerPhase =
   | "enter"
@@ -49,17 +42,17 @@ function WinnerRevealPlayer({
   if (!revealed) {
     return (
       <div className="flex flex-col items-center py-16 gap-6 text-center">
-        <p className="font-display text-2xl text-white/60">
+        <p className="font-display font-bold uppercase tracking-widest text-on-surface-variant text-sm">
           All questions answered!
         </p>
-        <p className="font-display text-4xl text-gold animate-[drumroll_0.6s_ease-in-out_infinite]">
+        <p className="font-display text-4xl font-black italic text-gold animate-[drumroll_0.6s_ease-in-out_infinite] drop-shadow-glow">
           And the winner is…
         </p>
         <div className="flex gap-2 mt-4">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="w-4 h-4 rounded-full bg-gold animate-[countdown-pulse_0.8s_ease-in-out_infinite]"
+              className="w-3 h-3 rounded-full bg-gold animate-[countdown-pulse_0.8s_ease-in-out_infinite]"
               style={{ animationDelay: `${i * 0.2}s` }}
             />
           ))}
@@ -70,35 +63,39 @@ function WinnerRevealPlayer({
 
   return (
     <div className="flex flex-col items-center py-12 animate-[winner-reveal_0.6s_ease-out] text-center">
-      <Trophy className="w-16 h-16 text-gold mb-4 drop-shadow-[0_0_30px_rgba(245,197,24,0.6)] animate-[pulse-gold_2s_ease-in-out_infinite]" />
-      <h2 className="font-display text-4xl font-bold text-gold mb-1 animate-[glow-text-gold_3s_ease-in-out_infinite]">
+      <Trophy className="w-16 h-16 text-gold mb-4 drop-shadow-[0_0_30px_rgba(255,254,172,0.6)] animate-[pulse-gold_2s_ease-in-out_infinite]" />
+      <h2 className="font-display text-4xl font-black italic uppercase tracking-tight text-gold mb-1 animate-[glow-text-gold_3s_ease-in-out_infinite]">
         {isMe ? "YOU WIN!" : winnerName}
       </h2>
-      <p className="font-display text-xl text-white/50 mb-10">${winnerScore}</p>
-      <div className="flex gap-4 flex-wrap justify-center mb-10">
+      <p className="font-display font-bold text-on-surface-variant mb-10">
+        ${winnerScore}
+      </p>
+      <div className="flex gap-3 flex-wrap justify-center mb-10">
         {sorted.map(([connId, score], i) => {
           const p = players.find((pl) => pl.connId === connId);
           return (
             <div
               key={connId}
               className={cn(
-                "flex flex-col items-center p-5 rounded-2xl border min-w-[110px]",
-                p?.playerName === myName ? "ring-2 ring-gold/50" : "",
+                "flex flex-col items-center p-5 rounded-2xl border min-w-[110px] backdrop-blur-md",
+                p?.playerName === myName ? "ring-2 ring-gold/30" : "",
                 i === 0
-                  ? "border-gold bg-gold/20 shadow-[0_0_30px_rgba(245,197,24,0.3)]"
-                  : "border-white/10 bg-surface",
+                  ? "border-gold/40 bg-[#291543] shadow-[0_0_30px_rgba(255,254,172,0.15)]"
+                  : "border-outline-variant/20 bg-[#22103a]",
               )}
             >
               <span className="text-3xl mb-1">
                 {i === 0 ? "🏆" : `#${i + 1}`}
               </span>
-              <span className="font-semibold text-white">
+              <span className="font-display font-bold text-on-surface">
                 {p?.playerName ?? connId}
               </span>
               <span
                 className={cn(
-                  "font-display text-2xl font-bold mt-1",
-                  i === 0 ? "text-gold" : "text-white",
+                  "font-display text-2xl font-black mt-1",
+                  i === 0
+                    ? "text-gold drop-shadow-glow"
+                    : "text-on-surface-variant",
                 )}
               >
                 ${score}
@@ -176,16 +173,22 @@ export default function Play() {
 
   if (effectivePhase === "enter") {
     return (
-      <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4">
+      <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4 relative overflow-hidden">
+        {/* Ambient blobs */}
+        <div className="fixed inset-0 pointer-events-none -z-10">
+          <div className="absolute top-1/4 -left-20 w-96 h-96 rounded-full bg-secondary/5 blur-[100px]" />
+          <div className="absolute bottom-1/4 -right-20 w-96 h-96 rounded-full bg-tertiary/5 blur-[100px]" />
+        </div>
+
         <div className="w-full max-w-sm animate-[slide-up_0.4s_ease-out]">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-board/20 border border-board/40 mb-4">
-              <Zap className="w-8 h-8 text-gold" />
-            </div>
-            <h1 className="font-display text-4xl font-bold text-gold tracking-wider">
-              JOIN GAME
+            <p className="font-display text-secondary text-xs font-bold uppercase tracking-[0.3em] mb-2">
+              JOIN THE SHOW
+            </p>
+            <h1 className="font-display text-5xl font-black italic tracking-tighter text-gold drop-shadow-[0_0_30px_rgba(255,254,172,0.4)]">
+              JEOPARDY!
             </h1>
-            <p className="text-white/50 mt-2 text-sm">
+            <p className="text-outline mt-2 text-sm">
               Enter the room code and your name
             </p>
           </div>
@@ -196,32 +199,34 @@ export default function Play() {
             </div>
           )}
 
-          <form onSubmit={joinRoom} className="flex flex-col gap-4">
-            <Input
-              value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-              placeholder="ROOM CODE"
-              maxLength={6}
-              className="text-center text-3xl font-display tracking-[0.4em] font-bold uppercase h-16 bg-navy-3 border-gold/20 focus:border-gold/60"
-            />
+          <form onSubmit={joinRoom} className="flex flex-col gap-3">
+            <div className="group relative rounded-2xl border border-outline-variant/30 bg-navy-3 px-4 py-2 neon-border-glow">
+              <Input
+                value={roomCode}
+                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                placeholder="ROOM CODE"
+                maxLength={6}
+                className="text-center text-3xl font-display tracking-[0.4em] font-bold uppercase h-14 bg-transparent border-none shadow-none focus-visible:ring-0 text-gold placeholder:text-outline/40"
+              />
+            </div>
             <Input
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
               placeholder="Your name"
               maxLength={24}
-              className="h-12"
+              className="h-12 bg-navy-3 border-outline-variant/30 focus:border-secondary/50 focus:ring-secondary/20 placeholder:text-outline/40"
             />
             <Button
               type="submit"
               variant="gold"
               size="xl"
               disabled={!roomCode.trim() || !playerName.trim()}
-              className="w-full"
+              className="w-full font-display font-black uppercase tracking-wider rounded-full"
             >
               Join Game <ChevronRight className="w-5 h-5" />
             </Button>
           </form>
-          <p className="text-center text-white/30 text-xs mt-4">
+          <p className="text-center text-outline/50 text-xs mt-4 tracking-widest uppercase">
             No account needed to play
           </p>
         </div>
@@ -247,14 +252,13 @@ export default function Play() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="flex-1">
-          <p className="font-semibold text-white">{myName}</p>
+          <p className="font-display font-bold uppercase tracking-wider text-gold">
+            {myName}
+          </p>
         </div>
-        <Badge
-          variant="default"
-          className="font-display text-sm tracking-widest px-3 py-1"
-        >
-          {state.roomCode}
-        </Badge>
+        <span className="font-display text-xs font-bold tracking-widest uppercase bg-navy-2 border border-outline-variant/30 text-gold px-3 py-1 rounded-full">
+          ROOM: {state.roomCode}
+        </span>
       </div>
 
       {/* Scores */}
@@ -264,18 +268,18 @@ export default function Play() {
             <div
               key={p.connId}
               className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition-all",
+                "flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm transition-all font-display font-bold uppercase tracking-wide",
                 p.playerName === myName
                   ? "border-gold/40 bg-gold/10 text-gold"
                   : state.buzzedPlayer?.playerId === p.connId
-                    ? "border-gold bg-gold/20 text-gold shadow-[0_0_12px_rgba(245,197,24,0.4)]"
+                    ? "border-secondary/60 bg-secondary/10 text-secondary shadow-[0_0_12px_rgba(0,227,253,0.3)]"
                     : state.failedBuzzPlayers.includes(p.connId)
                       ? "border-red-500/30 bg-red-900/10 text-red-300"
-                      : "border-white/10 bg-surface text-white",
+                      : "border-outline-variant/30 bg-navy-3 text-on-surface",
               )}
             >
-              <span className="font-medium">{p.playerName}</span>
-              <span className="font-display font-bold">
+              <span>{p.playerName}</span>
+              <span className="text-xs opacity-70">
                 ${state.scores[p.connId] ?? 0}
               </span>
             </div>
@@ -285,25 +289,113 @@ export default function Play() {
 
       {/* Lobby */}
       {effectivePhase === "lobby" && (
-        <div className="flex flex-col items-center py-20 gap-4 text-center">
-          <Loader2 className="w-10 h-10 text-gold/60 animate-spin" />
-          <p className="font-display text-xl text-white/60">
-            Waiting for host to start…
-          </p>
-          <p className="text-white/30 text-sm">
-            {state.players.length} player{state.players.length !== 1 ? "s" : ""}{" "}
-            in lobby
-          </p>
+        <div className="flex flex-col items-center gap-8 py-8">
+          {/* Room code centerpiece */}
+          <div className="relative group w-full">
+            <div className="absolute -inset-1 bg-linear-to-r from-secondary via-gold to-tertiary rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000" />
+            <div className="relative bg-navy-3 border border-outline-variant/20 px-8 py-6 rounded-2xl flex flex-col items-center neon-border-glow">
+              <span className="text-outline text-xs font-display font-bold uppercase tracking-widest mb-2">
+                Room Code
+              </span>
+              <div className="flex gap-3">
+                {(state.roomCode || "").split("").map((ch, i) => (
+                  <span
+                    key={i}
+                    className="font-display text-6xl font-black text-gold tracking-tighter drop-shadow-glow"
+                  >
+                    {ch}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Player bento grid */}
+          {state.players.length > 0 && (
+            <div className="w-full grid grid-cols-3 sm:grid-cols-4 gap-3">
+              {state.players.map((p, i) => {
+                const ICONS = ["🚀", "🐱", "🤖", "🎉", "💀", "⚡", "🌟", "🔥"];
+                const ROTATIONS = [
+                  "-rotate-2",
+                  "rotate-3",
+                  "-rotate-1",
+                  "rotate-6",
+                  "-rotate-3",
+                  "rotate-1",
+                  "-rotate-2",
+                  "rotate-2",
+                ];
+                const AVATAR_BG = [
+                  "bg-[#006875]",
+                  "bg-[#ff067f]/80",
+                  "bg-surface-bright",
+                  "bg-gold/20 border-2 border-gold/40",
+                  "bg-red-900",
+                  "bg-secondary/20",
+                  "bg-surface-2",
+                  "bg-[#291543]",
+                ];
+                return (
+                  <div
+                    key={p.connId}
+                    className={cn(
+                      "flex flex-col items-center transition-all duration-300 hover:rotate-0",
+                      ROTATIONS[i % ROTATIONS.length],
+                      p.playerName === myName ? "scale-110" : "",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "w-16 h-16 rounded-xl flex items-center justify-center shadow-lg mb-2 relative overflow-hidden",
+                        AVATAR_BG[i % AVATAR_BG.length],
+                      )}
+                    >
+                      <div className="absolute inset-0 glass-dome" />
+                      <span className="text-3xl relative z-10">
+                        {ICONS[i % ICONS.length]}
+                      </span>
+                    </div>
+                    <span
+                      className={cn(
+                        "font-display font-bold text-[10px] uppercase px-2 py-0.5 rounded-full shadow-sm",
+                        p.playerName === myName
+                          ? "bg-gold text-navy"
+                          : "bg-surface-bright text-on-surface",
+                      )}
+                    >
+                      {p.playerName}
+                    </span>
+                  </div>
+                );
+              })}
+              {/* Waiting slot */}
+              <div className="flex flex-col items-center opacity-40">
+                <div className="w-16 h-16 border-2 border-dashed border-outline-variant/60 rounded-xl flex items-center justify-center mb-2">
+                  <span className="text-outline text-2xl">+</span>
+                </div>
+                <span className="font-display font-bold text-[10px] uppercase text-outline">
+                  Waiting...
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 text-center">
+            <Loader2 className="w-4 h-4 text-secondary/60 animate-spin" />
+            <p className="font-display text-sm font-bold uppercase tracking-wider text-outline">
+              Waiting for host to start…
+            </p>
+          </div>
         </div>
       )}
 
       {/* Board — host is picking */}
       {effectivePhase === "active_board" && (
-        <div className="flex flex-col items-center py-20 gap-4 text-center">
-          <div className="w-16 h-16 rounded-full border-2 border-gold/30 flex items-center justify-center">
-            <span className="text-3xl">👀</span>
+        <div className="flex flex-col items-center py-20 gap-6 text-center">
+          <div className="w-20 h-20 rounded-full border-2 border-outline-variant/30 bg-surface-bright/30 flex items-center justify-center">
+            <span className="text-4xl">👀</span>
           </div>
-          <p className="font-display text-xl text-white/60">
+          <p className="font-display font-bold uppercase tracking-widest text-on-surface-variant text-sm">
             Host is picking a question…
           </p>
         </div>
@@ -312,22 +404,33 @@ export default function Play() {
       {/* Active Question */}
       {(effectivePhase === "active_question" || effectivePhase === "buzzed") &&
         state.activeQuestion && (
-          <div className="flex flex-col items-center animate-[slide-up_0.3s_ease-out]">
-            <Badge variant="board" className="mb-4 text-sm px-4 py-1.5">
-              {state.activeQuestion.categoryName} &bull; $
-              {state.activeQuestion.value}
-            </Badge>
-            <div className="rounded-2xl border border-white/10 bg-surface px-8 py-10 text-center mb-8 w-full">
-              <p className="text-2xl font-semibold text-white leading-relaxed">
-                {state.activeQuestion.clue}
-              </p>
+          <div className="flex flex-col items-center animate-[slide-up_0.3s_ease-out] gap-4">
+            {/* Category + value pill */}
+            <div className="inline-block px-4 py-1.5 rounded-full bg-[#301a4d]/60 border border-outline-variant/20 backdrop-blur">
+              <span className="font-display font-bold text-xs uppercase tracking-[0.2em] text-tertiary">
+                {state.activeQuestion.categoryName}
+              </span>
             </div>
 
-            {/* Revealed answer (broadcast after host confirms/timer expires) */}
+            {/* Clue card */}
+            <div className="relative w-full">
+              <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-gold/40 rounded-tl-xl" />
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-gold/40 rounded-br-xl" />
+              <div className="absolute -top-3 -right-3 bg-gold text-navy font-display font-black text-sm px-3 py-1 rounded-full rotate-6 z-10">
+                ${state.activeQuestion.value}
+              </div>
+              <div className="rounded-2xl border border-white/5 bg-[#291543]/60 px-6 py-8 text-center backdrop-blur">
+                <p className="font-display font-bold text-xl text-on-surface leading-relaxed">
+                  {state.activeQuestion.clue}
+                </p>
+              </div>
+            </div>
+
+            {/* Revealed answer */}
             {state.revealedAnswer && (
               <div
                 className={cn(
-                  "w-full rounded-xl border px-6 py-3 mb-4 text-sm text-center",
+                  "w-full rounded-xl border px-6 py-3 text-sm text-center font-display font-bold uppercase tracking-wide",
                   state.revealedAnswer.wasCorrect
                     ? "border-emerald-500/30 bg-emerald-900/20 text-emerald-300"
                     : "border-red-500/30 bg-red-900/20 text-red-300",
@@ -341,14 +444,15 @@ export default function Play() {
               </div>
             )}
 
+            {/* Buzz / steal / waiting states */}
             {effectivePhase === "buzzed" && state.buzzedPlayer ? (
               <div className="w-full flex flex-col items-center gap-3">
                 <div
                   className={cn(
-                    "w-full rounded-2xl border p-6 text-center font-display text-2xl font-bold",
+                    "w-full rounded-2xl border p-5 text-center font-display text-xl font-bold uppercase tracking-wide",
                     state.buzzedPlayer.playerName === myName
-                      ? "border-gold bg-gold/20 text-gold shadow-[0_0_40px_rgba(245,197,24,0.4)]"
-                      : "border-white/10 bg-surface text-white",
+                      ? "border-gold/40 bg-gold/10 text-gold shadow-[0_0_30px_rgba(255,254,172,0.15)]"
+                      : "border-outline-variant/20 bg-[#291543] text-on-surface",
                   )}
                 >
                   {state.buzzedPlayer.playerName === myName
@@ -356,14 +460,14 @@ export default function Play() {
                     : `${state.buzzedPlayer.playerName} buzzed in!`}
                 </div>
                 {state.buzzDeadline && buzzSecondsLeft !== null && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-white/40" />
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-on-surface-variant" />
                     <span
                       className={cn(
-                        "font-display font-bold text-lg",
+                        "font-display font-black text-xl",
                         buzzSecondsLeft <= 5
                           ? "text-red-400 animate-[countdown-pulse_0.8s_ease-in-out_infinite]"
-                          : "text-gold",
+                          : "text-gold drop-shadow-glow",
                       )}
                     >
                       {buzzSecondsLeft}s
@@ -373,18 +477,18 @@ export default function Play() {
               </div>
             ) : isStealPhase ? (
               <div className="w-full flex flex-col items-center gap-4">
-                <p className="font-display text-lg font-semibold text-yellow-400">
+                <p className="font-display text-lg font-bold uppercase tracking-widest text-yellow-400">
                   Steal opportunity!
                 </p>
                 {stealSecondsLeft !== null && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-white/40" />
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-on-surface-variant" />
                     <span
                       className={cn(
-                        "font-display font-bold text-lg",
+                        "font-display font-black text-xl",
                         stealSecondsLeft <= 5
                           ? "text-red-400 animate-[countdown-pulse_0.8s_ease-in-out_infinite]"
-                          : "text-gold",
+                          : "text-gold drop-shadow-glow",
                       )}
                     >
                       {stealSecondsLeft}s
@@ -392,30 +496,43 @@ export default function Play() {
                   </div>
                 )}
                 {iFailedBuzz ? (
-                  <div className="w-full rounded-2xl border border-red-500/20 bg-red-900/10 p-6 text-center">
-                    <p className="font-display text-xl text-red-400">
+                  <div className="w-full rounded-2xl border border-outline-variant/20 bg-[#22103a] p-5 text-center">
+                    <p className="font-display text-lg font-bold uppercase tracking-wide text-on-surface-variant">
                       You already answered wrong
                     </p>
-                    <p className="text-white/40 text-sm mt-1">
+                    <p className="text-outline text-sm mt-1">
                       Can&apos;t buzz again on this question
                     </p>
                   </div>
                 ) : (
                   <button
                     onClick={buzzIn}
-                    className="w-full rounded-2xl bg-yellow-600 hover:bg-yellow-500 active:scale-95 text-white font-display text-3xl font-bold py-6 shadow-[0_4px_30px_rgba(202,138,4,0.5)] hover:shadow-[0_4px_40px_rgba(202,138,4,0.7)] transition-all duration-150"
+                    className="w-full rounded-full bg-yellow-500 hover:bg-yellow-400 active:scale-95 text-navy font-display text-2xl font-black uppercase tracking-widest py-5 shadow-[0_0_30px_rgba(234,179,8,0.4)] hover:shadow-[0_0_40px_rgba(234,179,8,0.6)] transition-all duration-150"
                   >
                     STEAL!
                   </button>
                 )}
               </div>
             ) : !state.revealedAnswer ? (
-              <button
-                onClick={buzzIn}
-                className="w-full rounded-2xl bg-red-600 hover:bg-red-500 active:scale-95 text-white font-display text-4xl font-bold py-8 shadow-[0_4px_30px_rgba(220,38,38,0.5)] hover:shadow-[0_4px_40px_rgba(220,38,38,0.7)] transition-all duration-150 animate-[buzz_0.3s_ease-in-out]"
-              >
-                BUZZ IN!
-              </button>
+              /* Big BUZZ button — mobile controller style */
+              <div className="w-full flex flex-col items-center mt-4">
+                <button
+                  onClick={buzzIn}
+                  className="relative group w-64 h-64 flex items-center justify-center select-none active:scale-95 transition-transform duration-75"
+                >
+                  <div className="absolute inset-0 bg-gold/20 rounded-full blur-3xl group-active:bg-gold/40 transition-colors" />
+                  <div className="absolute inset-3 bg-gold rounded-full shadow-[0_0_60px_rgba(255,254,172,0.6)]" />
+                  <div className="absolute inset-3 rounded-full bg-linear-to-br from-gold via-[#f3f300] to-[#e4e400] border-4 border-white/20 flex flex-col items-center justify-center overflow-hidden">
+                    <div className="absolute inset-0 bg-linear-to-b from-white/10 to-transparent" />
+                    <span className="relative z-10 text-navy font-display font-black text-5xl italic tracking-tighter uppercase drop-shadow-sm">
+                      BUZZ
+                    </span>
+                    <span className="relative z-10 text-navy/40 font-display font-bold text-[10px] uppercase tracking-[0.3em] mt-1">
+                      Tap to Answer
+                    </span>
+                  </div>
+                </button>
+              </div>
             ) : null}
           </div>
         )}
@@ -430,12 +547,14 @@ export default function Play() {
           />
         ) : (
           <div className="flex flex-col items-center py-12 animate-[slide-up_0.4s_ease-out] text-center">
-            <Trophy className="w-16 h-16 text-gold mb-4 drop-shadow-[0_0_30px_rgba(245,197,24,0.6)]" />
-            <h2 className="font-display text-4xl font-bold text-gold mb-2">
+            <Trophy className="w-16 h-16 text-gold mb-4 drop-shadow-[0_0_30px_rgba(255,254,172,0.6)] animate-[pulse-gold_2s_ease-in-out_infinite]" />
+            <h2 className="font-display text-4xl font-black italic uppercase tracking-tight text-gold mb-2">
               Game Over!
             </h2>
-            <p className="text-white/50 mb-10">Final Scores</p>
-            <div className="flex gap-4 flex-wrap justify-center mb-10">
+            <p className="text-on-surface-variant text-sm font-display font-bold uppercase tracking-widest mb-10">
+              Final Scores
+            </p>
+            <div className="flex gap-3 flex-wrap justify-center mb-10">
               {Object.entries(state.finalScores ?? {})
                 .sort(([, a], [, b]) => b - a)
                 .map(([connId, score], i) => {
@@ -444,23 +563,25 @@ export default function Play() {
                     <div
                       key={connId}
                       className={cn(
-                        "flex flex-col items-center p-5 rounded-2xl border min-w-[110px]",
-                        p?.playerName === myName ? "ring-2 ring-gold/50" : "",
+                        "flex flex-col items-center p-5 rounded-2xl border min-w-[110px] backdrop-blur-md",
+                        p?.playerName === myName ? "ring-2 ring-gold/30" : "",
                         i === 0
-                          ? "border-gold bg-gold/20 shadow-[0_0_30px_rgba(245,197,24,0.3)]"
-                          : "border-white/10 bg-surface",
+                          ? "border-gold/40 bg-[#291543] shadow-[0_0_30px_rgba(255,254,172,0.15)]"
+                          : "border-outline-variant/20 bg-[#22103a]",
                       )}
                     >
                       <span className="text-3xl mb-1">
                         {i === 0 ? "🏆" : `#${i + 1}`}
                       </span>
-                      <span className="font-semibold text-white">
+                      <span className="font-display font-bold text-on-surface">
                         {p?.playerName ?? connId}
                       </span>
                       <span
                         className={cn(
-                          "font-display text-2xl font-bold mt-1",
-                          i === 0 ? "text-gold" : "text-white",
+                          "font-display text-2xl font-black mt-1",
+                          i === 0
+                            ? "text-gold drop-shadow-glow"
+                            : "text-on-surface-variant",
                         )}
                       >
                         ${score}
@@ -469,7 +590,12 @@ export default function Play() {
                   );
                 })}
             </div>
-            <Button variant="gold" size="lg" onClick={() => navigate("/")}>
+            <Button
+              variant="gold"
+              size="lg"
+              onClick={() => navigate("/")}
+              className="rounded-full font-display font-black uppercase tracking-wider"
+            >
               Play Again
             </Button>
           </div>
