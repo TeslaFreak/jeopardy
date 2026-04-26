@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { apiFetch } from "../api";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Tv2, Plus, X, Loader2, CheckCircle2 } from "lucide-react";
+import {
+  ChevronLeft,
+  Tv2,
+  Plus,
+  X,
+  Loader2,
+  CheckCircle2,
+  Pencil,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Question {
@@ -53,6 +60,7 @@ export default function SetBuilder() {
   const [newCatName, setNewCatName] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const catInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     apiFetch<GameSet>(`/sets/${setId}`)
@@ -73,6 +81,7 @@ export default function SetBuilder() {
       prev ? { ...prev, categories: [...prev.categories, cat] } : prev,
     );
     setNewCatName("");
+    catInputRef.current?.focus();
   }
 
   async function deleteCategory(slug: string) {
@@ -134,6 +143,8 @@ export default function SetBuilder() {
   const totalQuestions =
     gameSet?.categories.reduce((sum, c) => sum + c.questions.length, 0) ?? 0;
   const totalPossible = (gameSet?.categories.length ?? 0) * VALUES.length;
+  const progressPct =
+    totalPossible > 0 ? Math.round((totalQuestions / totalPossible) * 100) : 0;
 
   const isComplete =
     (gameSet?.categories.length ?? 0) > 0 &&
@@ -156,35 +167,25 @@ export default function SetBuilder() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8 flex-wrap">
+      <div className="flex items-center gap-4 mb-6 flex-wrap">
         <Link to="/sets">
-          <Button variant="ghost" size="sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-on-surface-variant hover:text-white"
+          >
             <ChevronLeft className="w-4 h-4" /> My Sets
           </Button>
         </Link>
         <div className="flex-1 min-w-0">
-          <h1 className="font-display text-3xl font-bold text-white truncate">
+          <h1 className="font-display text-2xl font-bold text-white truncate">
             {gameSet.title}
           </h1>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant="board">
-              {gameSet.categories.length} categories
-            </Badge>
-            <Badge
-              variant={
-                totalQuestions === totalPossible && totalPossible > 0
-                  ? "success"
-                  : "muted"
-              }
-            >
-              {totalQuestions}/{totalPossible} questions
-            </Badge>
-          </div>
-          {!isComplete && totalPossible > 0 && (
-            <p className="text-xs text-amber-400/80 mt-1">
-              Fill in all questions to enable hosting.
-            </p>
-          )}
+          <p className="text-xs text-on-surface-variant mt-0.5">
+            {gameSet.categories.length}{" "}
+            {gameSet.categories.length === 1 ? "category" : "categories"} ·{" "}
+            {totalQuestions}/{totalPossible} questions filled
+          </p>
         </div>
         <Button
           variant="gold"
@@ -194,33 +195,67 @@ export default function SetBuilder() {
             !isComplete ? "Complete all questions before hosting" : undefined
           }
           onClick={() => navigate(`/sets/${setId}/host`)}
+          className={cn(
+            isComplete && "animate-[pulse-gold_3s_ease-in-out_infinite]",
+          )}
         >
           <Tv2 className="w-4 h-4" />
           Host Game
         </Button>
       </div>
 
+      {/* Progress bar */}
+      {totalPossible > 0 && (
+        <div className="mb-6">
+          <div className="h-1.5 rounded-full bg-outline-variant/20 overflow-hidden">
+            <div
+              className={cn(
+                "h-full rounded-full transition-all duration-500",
+                isComplete
+                  ? "bg-linear-to-r from-emerald-500 to-emerald-400"
+                  : "bg-linear-to-r from-secondary/60 to-secondary",
+              )}
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          {isComplete ? (
+            <p className="text-xs text-emerald-400 font-display font-bold mt-1.5 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" /> All questions complete —
+              ready to host!
+            </p>
+          ) : (
+            <p className="text-xs text-on-surface-variant mt-1.5">
+              {progressPct}% complete · {totalPossible - totalQuestions}{" "}
+              question{totalPossible - totalQuestions !== 1 ? "s" : ""}{" "}
+              remaining
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Board */}
       {gameSet.categories.length > 0 ? (
-        <div className="overflow-x-auto mb-8 rounded-xl border border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
+        <div className="overflow-x-auto mb-6 rounded-xl border border-outline-variant/20 shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
           <table
             className="w-full border-collapse"
-            style={{ minWidth: `${gameSet.categories.length * 140}px` }}
+            style={{
+              minWidth: `${Math.max(gameSet.categories.length * 150, 400)}px`,
+            }}
           >
             <thead>
               <tr>
                 {gameSet.categories.map((cat) => (
                   <th
                     key={cat.slug}
-                    className="bg-board border-b-2 border-black/30 px-3 py-4 text-center"
+                    className="bg-board border-b-2 border-black/40 px-3 py-4 text-center"
                   >
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="font-display font-semibold text-sm text-white uppercase tracking-wider leading-tight">
+                    <div className="flex items-center justify-center gap-2 group/header">
+                      <span className="font-display font-bold text-xs text-white uppercase tracking-widest leading-tight">
                         {cat.name}
                       </span>
                       <button
                         onClick={() => deleteCategory(cat.slug)}
-                        className="text-white/30 hover:text-red-400 transition-colors shrink-0"
+                        className="opacity-0 group-hover/header:opacity-100 text-white/30 hover:text-red-400 transition-all shrink-0"
                         title="Delete category"
                       >
                         <X className="w-3.5 h-3.5" />
@@ -240,25 +275,30 @@ export default function SetBuilder() {
                         key={cat.slug}
                         onClick={() => openQuestionEditor(cat.slug, val)}
                         className={cn(
-                          "border border-black/40 text-center cursor-pointer transition-all duration-150 h-20",
+                          "border border-black/40 text-center cursor-pointer transition-all duration-150 h-[4.5rem] group/cell",
                           q
                             ? "bg-board hover:bg-board-hover"
                             : "bg-navy-3 hover:bg-navy-2",
                         )}
                       >
                         {q ? (
-                          <div className="flex flex-col items-center justify-center gap-1">
+                          <div className="flex flex-col items-center justify-center gap-0.5">
                             <span className="font-display font-bold text-2xl text-gold">
                               ${val}
                             </span>
                             <CheckCircle2 className="w-3 h-3 text-gold/50" />
                           </div>
                         ) : (
-                          <div className="flex flex-col items-center justify-center gap-1">
-                            <span className="font-display text-gold/40 text-lg font-bold">
+                          <div className="flex flex-col items-center justify-center gap-0.5">
+                            <span className="font-display text-gold/30 text-xl font-bold group-hover/cell:text-gold/60 transition-colors">
                               ${val}
                             </span>
-                            <span className="text-xs text-white/20">+ Add</span>
+                            <div className="flex items-center gap-1 opacity-0 group-hover/cell:opacity-100 transition-opacity">
+                              <Pencil className="w-2.5 h-2.5 text-secondary/60" />
+                              <span className="text-[10px] text-secondary/60 font-display uppercase tracking-wider">
+                                Add
+                              </span>
+                            </div>
                           </div>
                         )}
                       </td>
@@ -270,26 +310,42 @@ export default function SetBuilder() {
           </table>
         </div>
       ) : (
-        <div className="rounded-2xl border border-white/10 bg-surface p-12 text-center mb-8">
-          <p className="text-white/40 text-lg">
+        <div className="rounded-2xl border border-outline-variant/20 bg-navy-2 p-12 text-center mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-surface-2 border border-outline-variant/20 flex items-center justify-center mx-auto mb-4">
+            <Plus className="w-6 h-6 text-outline" />
+          </div>
+          <p className="text-white font-display font-bold">No categories yet</p>
+          <p className="text-on-surface-variant text-sm mt-1">
             Add your first category below to start building the board.
           </p>
         </div>
       )}
 
       {/* Add Category */}
-      <form onSubmit={addCategory} className="flex gap-2 max-w-md">
-        <Input
-          value={newCatName}
-          onChange={(e) => setNewCatName(e.target.value)}
-          placeholder="New category name (e.g. US History)…"
-          className="flex-1"
-        />
-        <Button type="submit" variant="board" disabled={!newCatName.trim()}>
-          <Plus className="w-4 h-4" />
-          Add
-        </Button>
-      </form>
+      <div className="rounded-2xl border border-outline-variant/20 bg-navy-2 p-5">
+        <p className="text-xs font-display font-bold uppercase tracking-widest text-on-surface-variant mb-3">
+          Add Category
+        </p>
+        <form onSubmit={addCategory} className="flex gap-2">
+          <Input
+            ref={catInputRef}
+            value={newCatName}
+            onChange={(e) => setNewCatName(e.target.value)}
+            placeholder="e.g. US History, Famous Quotes, Science…"
+            className="flex-1"
+          />
+          <Button type="submit" variant="board" disabled={!newCatName.trim()}>
+            <Plus className="w-4 h-4" />
+            Add
+          </Button>
+        </form>
+        {gameSet.categories.length > 0 && (
+          <p className="text-xs text-on-surface-variant/50 mt-2">
+            {gameSet.categories.length}/6 categories · Standard Jeopardy uses 6
+            categories
+          </p>
+        )}
+      </div>
 
       {/* Question Editor Modal */}
       <Dialog
@@ -300,19 +356,21 @@ export default function SetBuilder() {
       >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>
-              {editingCatName}
-              <span className="text-gold ml-2 font-display">
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-on-surface-variant font-normal">
+                {editingCatName}
+              </span>
+              <span className="text-gold font-display font-black">
                 ${editingQ?.value}
               </span>
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={saveQuestion} className="flex flex-col gap-4 mt-2">
+          <form onSubmit={saveQuestion} className="flex flex-col gap-4 mt-1">
             <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1.5">
+              <label className="block text-xs font-display font-bold uppercase tracking-widest text-on-surface-variant mb-2">
                 Clue{" "}
-                <span className="text-white/40 font-normal">
-                  (what players see)
+                <span className="normal-case tracking-normal font-sans font-normal text-on-surface-variant/50">
+                  (what players see on screen)
                 </span>
               </label>
               <textarea
@@ -321,14 +379,17 @@ export default function SetBuilder() {
                   setQForm((f) => ({ ...f, clue: e.target.value }))
                 }
                 rows={3}
-                className="w-full rounded-lg border border-white/20 bg-navy-3 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/60 transition-colors resize-none"
+                className="w-full rounded-lg border border-outline-variant/40 bg-navy-3 px-3 py-2.5 text-sm text-white placeholder:text-on-surface-variant/40 focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/60 transition-colors resize-none"
                 placeholder="This U.S. state is known as the Sunshine State."
                 autoFocus
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-white/80 mb-1.5">
-                Answer
+              <label className="block text-xs font-display font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+                Answer{" "}
+                <span className="normal-case tracking-normal font-sans font-normal text-on-surface-variant/50">
+                  (accepted correct response)
+                </span>
               </label>
               <Input
                 value={qForm.answer}

@@ -111,6 +111,7 @@ function mergeConfig(partial?: Partial<GameConfig>): GameConfig {
   return {
     buzzInTimer: { ...DEFAULT_GAME_CONFIG.buzzInTimer, ...partial?.buzzInTimer },
     stealTimer: { ...DEFAULT_GAME_CONFIG.stealTimer, ...partial?.stealTimer },
+    questionTimer: { ...DEFAULT_GAME_CONFIG.questionTimer, ...partial?.questionTimer },
     wrongAnswerPenalty: partial?.wrongAnswerPenalty ?? DEFAULT_GAME_CONFIG.wrongAnswerPenalty,
   };
 }
@@ -400,12 +401,16 @@ export const handler = async (
         await send(apigw, connId, 'ERROR', { message: 'Question not found' });
         break;
       }
-      // Store active question, reset failedBuzzPlayers
+      // Store active question, reset failedBuzzPlayers, persist deadline
+      const config = (room.config as GameConfig) ?? DEFAULT_GAME_CONFIG;
+      const questionDeadline = config.questionTimer.enabled
+        ? Date.now() + config.questionTimer.seconds * 1000
+        : undefined;
       await ddb.send(new UpdateCommand({
         TableName: GAMES_TABLE,
         Key: { PK: `ROOM#${roomCode}`, SK: 'META' },
-        UpdateExpression: 'SET activeQuestion = :q, buzzedConnId = :n, failedBuzzPlayers = :f',
-        ExpressionAttributeValues: { ':q': { categorySlug, value }, ':n': null, ':f': [] },
+        UpdateExpression: 'SET activeQuestion = :q, buzzedConnId = :n, failedBuzzPlayers = :f, questionDeadline = :d',
+        ExpressionAttributeValues: { ':q': { categorySlug, value }, ':n': null, ':f': [], ':d': questionDeadline ?? null },
       }));
       // Send full question (with answer) only to host
       await send(apigw, connId, 'QUESTION_ACTIVE', {
@@ -413,6 +418,7 @@ export const handler = async (
         categorySlug,
         categoryName: category.name,
         value,
+        questionDeadline,
       });
       // Broadcast to everyone else WITHOUT the answer
       const nonHostConns = liveConns.filter(c => c.connId !== connId);
@@ -421,6 +427,7 @@ export const handler = async (
         categorySlug,
         categoryName: category.name,
         value,
+        questionDeadline,
       });
       break;
     }
@@ -487,6 +494,22 @@ export const handler = async (
       } else {
         await handleWrongAnswer(roomCode, playerId, value, room, apigw, liveConns);
       }
+      break;
+    }
+
+    // ── QUESTION_TIMER_EXPIRED ─────────────────────────────────────────────
+    case 'QUESTION_TIMER_EXPIRED': {
+      if (!isHost) {
+        await send(apigw, connId, 'ERROR', { message: 'Only the host can signal timer expiry' });
+        break;
+      }
+      // Only resolve if nobody has buzzed in yet
+      if (room.buzzedConnId) break;
+      const freshRoom = await getRoom(roomCode);
+      if (!freshRoom) break;
+      const freshConns = (await getConnections(roomCode)) as ConnRecord[];
+      const freshLive = freshConns.filter(c => !c.disconnected);
+      await resolveQuestion(roomCode, freshRoom, apigw, freshLive, false);
       break;
     }
 
@@ -560,14 +583,19 @@ export const handler = async (
           const cat = board.find(c => c.slug === activeQ.categorySlug);
           const q = cat?.questions.find(q => q.value === activeQ.value);
           if (cat && q) {
+            // Include answer for host so they can judge on reconnect
             activeQPayload = {
-              question: { clue: q.clue },
+              question: isHost ? { clue: q.clue, answer: q.answer } : { clue: q.clue },
               categorySlug: activeQ.categorySlug,
               categoryName: cat.name,
               value: activeQ.value,
             };
           }
         }
+        // Restore question deadline if nobody has buzzed yet
+        const questionDeadline = room.questionDeadline && !room.buzzedConnId
+          ? room.questionDeadline
+          : undefined;
         let buzzedPlayerPayload = null;
         if (room.buzzedConnId) {
           const bc = freshLive.find(c => c.connId === room.buzzedConnId);
@@ -583,6 +611,7 @@ export const handler = async (
           failedBuzzPlayers: room.failedBuzzPlayers ?? [],
           activeQuestion: activeQPayload,
           buzzedPlayer: buzzedPlayerPayload,
+          questionDeadline,
         });
       } else {
         // ended

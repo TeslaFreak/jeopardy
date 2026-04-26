@@ -46,6 +46,7 @@ export interface GameState {
   activeQuestion: ActiveQuestion | null;
   buzzedPlayer: { playerId: string; playerName: string } | null;
   buzzDeadline: number | null;
+  questionDeadline: number | null;
   usedQuestions: string[];
   finalScores: Record<string, number> | null;
   config: GameConfig | null;
@@ -67,6 +68,7 @@ const initialState: GameState = {
   activeQuestion: null,
   buzzedPlayer: null,
   buzzDeadline: null,
+  questionDeadline: null,
   usedQuestions: [],
   finalScores: null,
   config: null,
@@ -130,7 +132,7 @@ export function useGameSocket() {
         break;
       }
       case 'QUESTION_ACTIVE': {
-        const p = payload as ActiveQuestion & { question: { clue: string; answer?: string } };
+        const p = payload as ActiveQuestion & { question: { clue: string; answer?: string }; questionDeadline?: number };
         updateState({
           activeQuestion: {
             clue: p.question.clue,
@@ -141,6 +143,7 @@ export function useGameSocket() {
           },
           buzzedPlayer: null,
           buzzDeadline: null,
+          questionDeadline: p.questionDeadline ?? null,
           failedBuzzPlayers: [],
           stealDeadline: null,
           revealedAnswer: null,
@@ -152,6 +155,7 @@ export function useGameSocket() {
         updateState({
           buzzedPlayer: { playerId: p.playerId, playerName: p.playerName },
           buzzDeadline: p.deadline ?? null,
+          questionDeadline: null, // stop question timer once someone buzzes
           stealDeadline: null,
         });
         break;
@@ -183,6 +187,7 @@ export function useGameSocket() {
           activeQuestion: null,
           buzzedPlayer: null,
           buzzDeadline: null,
+          questionDeadline: null,
           failedBuzzPlayers: [],
           stealDeadline: null,
           revealedAnswer: null,
@@ -199,6 +204,7 @@ export function useGameSocket() {
           activeQuestion: null,
           buzzedPlayer: null,
           buzzDeadline: null,
+          questionDeadline: null,
           stealDeadline: null,
           isReconnecting: false,
           isAllQuestionsComplete: p.allQuestionsComplete ?? false,
@@ -259,6 +265,7 @@ export function useGameSocket() {
           } | null;
           buzzedPlayer?: { playerId: string; playerName: string } | null;
           finalScores?: Record<string, number>;
+          questionDeadline?: number;
         };
         const p = payload as TvSyncPayload;
         setState(prev => ({
@@ -281,6 +288,7 @@ export function useGameSocket() {
             : null,
           buzzedPlayer: p.buzzedPlayer ?? null,
           finalScores: p.finalScores ?? null,
+          questionDeadline: p.questionDeadline ?? null,
           isReconnecting: false,
         }));
         break;
@@ -343,7 +351,7 @@ export function useGameSocket() {
       if (!isHost && role !== 'tv') {
         sendMessage('JOIN_ROOM', { roomCode, playerName });
       }
-      if (role === 'tv') {
+      if (role === 'tv' || isHost) {
         sendMessage('REQUEST_STATE_SYNC', {});
       }
     };

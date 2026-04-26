@@ -63,7 +63,10 @@ function WinnerRevealPlayer({
 
   return (
     <div className="flex flex-col items-center py-12 animate-[winner-reveal_0.6s_ease-out] text-center">
-      <Trophy className="w-16 h-16 text-gold mb-4 drop-shadow-[0_0_30px_rgba(255,254,172,0.6)] animate-[pulse-gold_2s_ease-in-out_infinite]" />
+      <div className="relative mb-4">
+        <div className="absolute inset-0 rounded-full bg-gold/20 blur-2xl animate-[pulse-gold_2s_ease-in-out_infinite] scale-150" />
+        <Trophy className="relative w-16 h-16 text-gold [filter:drop-shadow(0_0_16px_rgba(255,254,172,0.8))] animate-[pulse-gold_2s_ease-in-out_infinite]" />
+      </div>
       <h2 className="font-display text-4xl font-black italic uppercase tracking-tight text-gold mb-1 animate-[glow-text-gold_3s_ease-in-out_infinite]">
         {isMe ? "YOU WIN!" : winnerName}
       </h2>
@@ -235,7 +238,7 @@ export default function Play() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
+    <div className="max-w-2xl mx-auto px-4 py-6 flex flex-col min-h-[calc(100dvh-3.5rem)]">
       {state.isReconnecting && (
         <div className="rounded-xl border border-yellow-500/30 bg-yellow-900/20 text-yellow-300 px-4 py-3 mb-4 text-sm flex items-center gap-2">
           <WifiOff className="w-4 h-4 shrink-0" />
@@ -246,44 +249,6 @@ export default function Play() {
       {!state.isReconnecting && state.error && (
         <div className="rounded-xl border border-red-500/30 bg-red-900/20 text-red-300 px-4 py-3 mb-4 text-sm">
           {state.error}
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="flex-1">
-          <p className="font-display font-bold uppercase tracking-wider text-gold">
-            {myName}
-          </p>
-        </div>
-        <span className="font-display text-xs font-bold tracking-widest uppercase bg-navy-2 border border-outline-variant/30 text-gold px-3 py-1 rounded-full">
-          ROOM: {state.roomCode}
-        </span>
-      </div>
-
-      {/* Scores */}
-      {state.players.length > 0 && (
-        <div className="flex gap-2 flex-wrap mb-6">
-          {state.players.map((p) => (
-            <div
-              key={p.connId}
-              className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm transition-all font-display font-bold uppercase tracking-wide",
-                p.playerName === myName
-                  ? "border-gold/40 bg-gold/10 text-gold"
-                  : state.buzzedPlayer?.playerId === p.connId
-                    ? "border-secondary/60 bg-secondary/10 text-secondary shadow-[0_0_12px_rgba(0,227,253,0.3)]"
-                    : state.failedBuzzPlayers.includes(p.connId)
-                      ? "border-red-500/30 bg-red-900/10 text-red-300"
-                      : "border-outline-variant/30 bg-navy-3 text-on-surface",
-              )}
-            >
-              <span>{p.playerName}</span>
-              <span className="text-xs opacity-70">
-                ${state.scores[p.connId] ?? 0}
-              </span>
-            </div>
-          ))}
         </div>
       )}
 
@@ -404,7 +369,7 @@ export default function Play() {
       {/* Active Question */}
       {(effectivePhase === "active_question" || effectivePhase === "buzzed") &&
         state.activeQuestion && (
-          <div className="flex flex-col items-center animate-[slide-up_0.3s_ease-out] gap-4">
+          <div className="flex flex-col flex-1 items-center animate-[slide-up_0.3s_ease-out] gap-4">
             {/* Category + value pill */}
             <div className="inline-block px-4 py-1.5 rounded-full bg-[#301a4d]/60 border border-outline-variant/20 backdrop-blur">
               <span className="font-display font-bold text-xs uppercase tracking-[0.2em] text-tertiary">
@@ -413,13 +378,13 @@ export default function Play() {
             </div>
 
             {/* Clue card */}
-            <div className="relative w-full">
+            <div className="relative w-full flex-1 min-h-0">
               <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-gold/40 rounded-tl-xl" />
               <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-gold/40 rounded-br-xl" />
               <div className="absolute -top-3 -right-3 bg-gold text-navy font-display font-black text-sm px-3 py-1 rounded-full rotate-6 z-10">
                 ${state.activeQuestion.value}
               </div>
-              <div className="rounded-2xl border border-white/5 bg-[#291543]/60 px-6 py-8 text-center backdrop-blur">
+              <div className="rounded-2xl border border-white/5 bg-[#291543]/60 px-6 py-8 text-center backdrop-blur overflow-auto max-h-full">
                 <p className="font-display font-bold text-xl text-on-surface leading-relaxed">
                   {state.activeQuestion.clue}
                 </p>
@@ -446,7 +411,7 @@ export default function Play() {
 
             {/* Buzz / steal / waiting states */}
             {effectivePhase === "buzzed" && state.buzzedPlayer ? (
-              <div className="w-full flex flex-col items-center gap-3">
+              <div className="w-full flex flex-col items-center gap-3 shrink-0">
                 <div
                   className={cn(
                     "w-full rounded-2xl border p-5 text-center font-display text-xl font-bold uppercase tracking-wide",
@@ -476,7 +441,7 @@ export default function Play() {
                 )}
               </div>
             ) : isStealPhase ? (
-              <div className="w-full flex flex-col items-center gap-4">
+              <div className="w-full flex flex-col items-center gap-4 shrink-0">
                 <p className="font-display text-lg font-bold uppercase tracking-widest text-yellow-400">
                   Steal opportunity!
                 </p>
@@ -515,7 +480,7 @@ export default function Play() {
               </div>
             ) : !state.revealedAnswer ? (
               /* Big BUZZ button — mobile controller style */
-              <div className="w-full flex flex-col items-center mt-4">
+              <div className="w-full flex flex-col items-center mt-4 shrink-0">
                 <button
                   onClick={buzzIn}
                   className="relative group w-64 h-64 flex items-center justify-center select-none active:scale-95 transition-transform duration-75"
@@ -547,7 +512,10 @@ export default function Play() {
           />
         ) : (
           <div className="flex flex-col items-center py-12 animate-[slide-up_0.4s_ease-out] text-center">
-            <Trophy className="w-16 h-16 text-gold mb-4 drop-shadow-[0_0_30px_rgba(255,254,172,0.6)] animate-[pulse-gold_2s_ease-in-out_infinite]" />
+            <div className="relative mb-4">
+              <div className="absolute inset-0 rounded-full bg-gold/20 blur-2xl animate-[pulse-gold_2s_ease-in-out_infinite] scale-150" />
+              <Trophy className="relative w-16 h-16 text-gold [filter:drop-shadow(0_0_16px_rgba(255,254,172,0.8))] animate-[pulse-gold_2s_ease-in-out_infinite]" />
+            </div>
             <h2 className="font-display text-4xl font-black italic uppercase tracking-tight text-gold mb-2">
               Game Over!
             </h2>

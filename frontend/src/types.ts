@@ -25,12 +25,14 @@ export interface TimerSetting {
 export interface GameConfig {
   buzzInTimer: TimerSetting;
   stealTimer: TimerSetting;
+  questionTimer: TimerSetting;
   wrongAnswerPenalty: 'subtract' | 'nothing';
 }
 
 export const DEFAULT_GAME_CONFIG: GameConfig = {
   buzzInTimer: { enabled: true, seconds: 20 },
   stealTimer: { enabled: true, seconds: 10 },
+  questionTimer: { enabled: true, seconds: 20 },
   wrongAnswerPenalty: 'subtract',
 };
 
@@ -49,6 +51,7 @@ export type ClientAction =
   | 'END_GAME'
   | 'STEAL_EXPIRED'
   | 'BUZZ_TIMER_EXPIRED'
+  | 'QUESTION_TIMER_EXPIRED'
   | 'REQUEST_STATE_SYNC';
 
 export type ServerAction =

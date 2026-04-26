@@ -11,8 +11,17 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Tv2, Trash2, LayoutGrid, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Plus,
+  Pencil,
+  Tv2,
+  Trash2,
+  LayoutGrid,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 
 interface SetMeta {
   setId: string;
@@ -28,6 +37,7 @@ export default function Sets() {
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -55,8 +65,10 @@ export default function Sets() {
 
   async function deleteSet(setId: string) {
     if (!confirm("Delete this set? This cannot be undone.")) return;
+    setDeletingId(setId);
     await apiFetch(`/sets/${setId}`, { method: "DELETE" });
     setSets((prev) => prev.filter((s) => s.setId !== setId));
+    setDeletingId(null);
   }
 
   return (
@@ -67,8 +79,10 @@ export default function Sets() {
           <h1 className="font-display text-4xl font-bold text-white">
             My Game Sets
           </h1>
-          <p className="text-white/50 mt-1 text-sm">
-            {sets.length} set{sets.length !== 1 ? "s" : ""}
+          <p className="text-on-surface-variant mt-1 text-sm">
+            {loading
+              ? "Loading…"
+              : `${sets.length} set${sets.length !== 1 ? "s" : ""}`}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -124,14 +138,19 @@ export default function Sets() {
           <Loader2 className="w-8 h-8 animate-spin" />
         </div>
       ) : sets.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-surface border border-white/10 flex items-center justify-center">
-            <LayoutGrid className="w-8 h-8 text-white/30" />
+        <div className="flex flex-col items-center justify-center py-24 gap-5">
+          <div className="w-20 h-20 rounded-3xl bg-navy-2 border border-outline-variant/30 flex items-center justify-center shadow-[0_0_40px_rgba(0,0,0,0.4)]">
+            <LayoutGrid className="w-9 h-9 text-outline" />
           </div>
-          <p className="text-white/50 text-center">
-            No sets yet. Create your first set to get started!
-          </p>
-          <Button variant="gold" onClick={() => setOpen(true)}>
+          <div className="text-center">
+            <p className="text-white font-display font-bold text-lg">
+              No sets yet
+            </p>
+            <p className="text-on-surface-variant text-sm mt-1">
+              Create your first question set to get started.
+            </p>
+          </div>
+          <Button variant="gold" size="lg" onClick={() => setOpen(true)}>
             <Plus className="w-4 h-4" /> Create First Set
           </Button>
         </div>
@@ -140,32 +159,72 @@ export default function Sets() {
           {sets.map((s) => (
             <div
               key={s.setId}
-              className="group rounded-2xl border border-white/10 bg-surface hover:border-gold/30 hover:bg-surface-2 transition-all duration-200 p-5 flex flex-col gap-4 shadow-[0_4px_24px_rgba(0,0,0,0.3)]"
+              className="group relative rounded-2xl border border-outline-variant/20 bg-navy-2 hover:border-gold/30 hover:bg-surface-2 transition-all duration-200 flex flex-col shadow-[0_4px_24px_rgba(0,0,0,0.35)] overflow-hidden"
             >
-              <div className="flex-1">
-                <h3 className="font-display text-lg font-semibold text-white group-hover:text-gold transition-colors line-clamp-2">
-                  {s.title}
-                </h3>
-                <p className="text-xs text-white/40 mt-1">
-                  Updated {new Date(s.updatedAt).toLocaleDateString()}
-                </p>
-              </div>
-              <Badge variant="board" className="w-fit">
-                <LayoutGrid className="w-3 h-3 mr-1" />
-                Question Set
-              </Badge>
-              <div className="flex gap-2 pt-1">
-                <Link to={`/sets/${s.setId}`} className="flex-1">
-                  <Button variant="board" size="sm" className="w-full gap-1.5">
-                    <Pencil className="w-3.5 h-3.5" />
-                    Edit
-                  </Button>
-                </Link>
+              {/* Completion stripe at top */}
+              <div
+                className={cn(
+                  "h-0.5 w-full",
+                  s.isComplete
+                    ? "bg-linear-to-r from-emerald-500/60 via-emerald-400/80 to-emerald-500/60"
+                    : "bg-linear-to-r from-amber-500/30 via-amber-400/50 to-amber-500/30",
+                )}
+              />
+
+              <div className="p-5 flex flex-col gap-4 flex-1">
+                {/* Title + status */}
                 <div className="flex-1">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <h3 className="font-display text-base font-bold text-white group-hover:text-gold transition-colors line-clamp-2 leading-snug">
+                      {s.title}
+                    </h3>
+                    {s.isComplete ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-amber-400/70 shrink-0 mt-0.5" />
+                    )}
+                  </div>
+                  <p className="text-xs text-on-surface-variant/60">
+                    Updated {new Date(s.updatedAt).toLocaleDateString()}
+                  </p>
+                </div>
+
+                {/* Status pill */}
+                <div
+                  className={cn(
+                    "inline-flex items-center gap-1.5 text-xs font-display font-bold uppercase tracking-wider px-2.5 py-1 rounded-full w-fit",
+                    s.isComplete
+                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      : "bg-amber-500/10 text-amber-400 border border-amber-500/20",
+                  )}
+                >
+                  {s.isComplete ? (
+                    <>
+                      <CheckCircle2 className="w-3 h-3" /> Ready to host
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-3 h-3" /> Incomplete
+                    </>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 items-center">
+                  <Link to={`/sets/${s.setId}`} className="flex-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1.5"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Edit
+                    </Button>
+                  </Link>
                   <Button
                     variant="gold"
                     size="sm"
-                    className="w-full gap-1.5"
+                    className="flex-1 gap-1.5"
                     disabled={!s.isComplete}
                     title={
                       !s.isComplete
@@ -179,15 +238,20 @@ export default function Sets() {
                     <Tv2 className="w-3.5 h-3.5" />
                     Host
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteSet(s.setId)}
+                    disabled={deletingId === s.setId}
+                    className="h-8 w-8 text-white/30 hover:text-red-400 hover:bg-red-900/20 shrink-0"
+                  >
+                    {deletingId === s.setId ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteSet(s.setId)}
-                  className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/20 shrink-0"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
               </div>
             </div>
           ))}

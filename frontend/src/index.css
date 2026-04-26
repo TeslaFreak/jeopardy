@@ -42,6 +42,20 @@
       0 0 80px rgba(245, 197, 24, 0.3);
   }
 }
+@keyframes pulse-cyan {
+  0%,
+  100% {
+    box-shadow:
+      0 0 18px rgba(0, 227, 253, 0.25),
+      inset 0 0 8px rgba(0, 227, 253, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 40px rgba(0, 227, 253, 0.55),
+      0 0 80px rgba(0, 227, 253, 0.15),
+      inset 0 0 14px rgba(0, 227, 253, 0.2);
+  }
+}
 @keyframes glow-text-gold {
   0%,
   100% {

@@ -1,15 +1,18 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
 export function Navbar() {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { authStatus, signOut } = useAuthenticator((ctx) => [ctx.authStatus]);
   const isAuthenticated = authStatus === "authenticated";
   const isPlayPage = location.pathname === "/play";
   const isTVPage = location.pathname === "/tv";
   if (isTVPage) return null;
+
+  const playRoomCode = isPlayPage ? searchParams.get("room") : null;
 
   return (
     <nav className="sticky top-0 z-40 border-b border-outline-variant/20 bg-navy/80 backdrop-blur-xl">
@@ -21,6 +24,11 @@ export function Navbar() {
         </Link>
 
         <div className="flex items-center gap-3">
+          {playRoomCode && (
+            <span className="font-display text-xs font-bold tracking-widest uppercase bg-navy-2 border border-outline-variant/30 text-gold px-3 py-1 rounded-full">
+              ROOM: {playRoomCode}
+            </span>
+          )}
           {!isPlayPage && isAuthenticated && (
             <>
               <Link to="/sets">

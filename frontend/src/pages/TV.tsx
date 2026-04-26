@@ -1,37 +1,80 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useGameSocket } from "../hooks/useGameSocket";
 import { useCountdown } from "../hooks/useCountdown";
 
 import { cn } from "@/lib/utils";
-import { Trophy, Loader2, WifiOff, Clock } from "lucide-react";
+import { Trophy, Loader2, WifiOff } from "lucide-react";
 
 const VALUES = [100, 200, 300, 400, 500];
 
 function TimerBar({
   secondsLeft,
+  totalSeconds,
   label,
+  color = "gold",
 }: {
   secondsLeft: number | null;
+  totalSeconds: number | null;
   label: string;
+  color?: "gold" | "cyan" | "yellow";
 }) {
   if (secondsLeft === null) return null;
+  const pct = totalSeconds
+    ? Math.max(0, (secondsLeft / totalSeconds) * 100)
+    : 100;
+  const isLow = secondsLeft <= 5;
+
+  const colorMap = {
+    gold: {
+      text: isLow ? "text-red-400" : "text-gold drop-shadow-glow",
+      bar: "from-gold to-gold/70",
+      track: "bg-gold/10",
+      glow: "shadow-[0_0_16px_rgba(255,254,172,0.3)]",
+    },
+    cyan: {
+      text: isLow ? "text-red-400" : "text-secondary",
+      bar: "from-secondary to-secondary/70",
+      track: "bg-secondary/10",
+      glow: "shadow-[0_0_16px_rgba(0,227,253,0.3)]",
+    },
+    yellow: {
+      text: isLow ? "text-red-400" : "text-yellow-400",
+      bar: "from-yellow-400 to-yellow-400/70",
+      track: "bg-yellow-400/10",
+      glow: "shadow-[0_0_16px_rgba(250,204,21,0.3)]",
+    },
+  }[color];
+
   return (
-    <div className="flex items-center justify-center gap-3 text-lg font-display">
-      <Clock className="w-5 h-5 text-on-surface-variant" />
-      <span className="text-on-surface-variant uppercase tracking-widest text-xs font-bold">
+    <div className="flex flex-col items-center gap-2 w-full max-w-sm">
+      <span className="text-on-surface-variant uppercase tracking-widest text-xs font-bold font-display">
         {label}
       </span>
       <span
         className={cn(
-          "font-black text-3xl min-w-[3ch] text-center",
-          secondsLeft <= 5
-            ? "text-red-400 animate-[countdown-pulse_0.8s_ease-in-out_infinite]"
-            : "text-gold drop-shadow-glow",
+          "font-display font-black text-7xl min-w-[2ch] text-center leading-none",
+          colorMap.text,
+          isLow && "animate-[countdown-pulse_0.8s_ease-in-out_infinite]",
         )}
       >
-        {secondsLeft}s
+        {secondsLeft}
       </span>
+      <div
+        className={cn(
+          "w-full h-3 rounded-full p-0.5 relative overflow-hidden",
+          colorMap.track,
+          colorMap.glow,
+        )}
+      >
+        <div
+          className={cn(
+            "h-full bg-linear-to-r rounded-full transition-[width] duration-300",
+            colorMap.bar,
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   );
 }
@@ -129,14 +172,68 @@ export default function TV() {
   const roomCode = searchParams.get("room");
   const { state, connect } = useGameSocket();
 
-  const { secondsLeft: buzzSecondsLeft } = useCountdown(state.buzzDeadline);
-  const { secondsLeft: stealSecondsLeft } = useCountdown(state.stealDeadline);
+  const clueTextRef = useRef<HTMLParagraphElement>(null);
+  const clueCardBodyRef = useRef<HTMLDivElement>(null);
+
+  // Auto-fit clue text: binary-search for the largest font size that fits the card.
+  // Deferred into rAF so the flex-1 layout is painted before we measure clientHeight.
+  useEffect(() => {
+    const text = clueTextRef.current;
+    const card = clueCardBodyRef.current;
+    if (!text || !card) return;
+
+    const fit = () => {
+      if (!text || !card || card.clientHeight === 0) return;
+      // Padding inside the card (p-8 = 32px each side)
+      const available = card.clientHeight - 64;
+      let lo = 12,
+        hi = 80;
+      text.style.fontSize = `${hi}px`;
+      while (lo < hi - 1) {
+        const mid = Math.round((lo + hi) / 2);
+        text.style.fontSize = `${mid}px`;
+        if (text.scrollHeight <= available) lo = mid;
+        else hi = mid;
+      }
+      text.style.fontSize = `${lo}px`;
+    };
+
+    const raf = requestAnimationFrame(fit);
+    return () => cancelAnimationFrame(raf);
+  }, [state.activeQuestion?.clue]);
+
+  const { secondsLeft: buzzSecondsLeft, totalSeconds: buzzTotalSeconds } =
+    useCountdown(state.buzzDeadline);
+  const { secondsLeft: stealSecondsLeft, totalSeconds: stealTotalSeconds } =
+    useCountdown(state.stealDeadline);
+  const {
+    secondsLeft: questionSecondsLeft,
+    totalSeconds: questionTotalSeconds,
+  } = useCountdown(state.questionDeadline);
 
   useEffect(() => {
     if (roomCode) {
       connect(roomCode, "__tv__", false, "tv");
     }
   }, [roomCode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Broadcast a heartbeat every 5 s so the host page knows this tab is alive.
+  useEffect(() => {
+    const channel = new BroadcastChannel("jeopardy-tv-status");
+    channel.postMessage({ type: "tv-heartbeat" });
+    const id = setInterval(
+      () => channel.postMessage({ type: "tv-heartbeat" }),
+      5_000,
+    );
+    const onUnload = () => channel.postMessage({ type: "tv-closed" });
+    window.addEventListener("beforeunload", onUnload);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("beforeunload", onUnload);
+      channel.postMessage({ type: "tv-closed" });
+      channel.close();
+    };
+  }, []);
 
   if (!roomCode) {
     return (
@@ -181,8 +278,8 @@ export default function TV() {
         </span>
       </header>
 
-      {/* Scoreboard strip — always rendered, player cards */}
-      {state.players.length > 0 && (
+      {/* Scoreboard strip — shown on board only, hidden during clue view */}
+      {state.players.length > 0 && !state.activeQuestion && (
         <section className="relative z-10 shrink-0 flex flex-wrap justify-center gap-3 px-6 pb-3">
           {state.players.map((p, i) => {
             const ROTATIONS = [
@@ -348,101 +445,109 @@ export default function TV() {
 
       {/* Active question — Clue View */}
       {state.phase === "active" && state.activeQuestion && (
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 animate-[slide-up_0.3s_ease-out]">
+        <div className="relative z-10 flex-1 min-h-0 flex flex-col items-center px-6 pt-4 pb-4 gap-4 overflow-hidden animate-[slide-up_0.3s_ease-out]">
           {/* Ambient glow behind card */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gold/5 blur-[120px] rounded-full pointer-events-none" />
 
           {/* Category pill */}
-          <div className="mb-8 text-center">
+          <div className="shrink-0 text-center">
             <span className="font-display font-extrabold text-tertiary tracking-[0.2em] text-xs uppercase mb-2 block">
               CATEGORY
             </span>
             <div className="inline-block px-6 py-2 bg-[#301a4d]/60 backdrop-blur-md rounded-lg -rotate-1 border-b-4 border-tertiary">
-              <h2 className="font-display font-bold text-on-surface text-xl md:text-2xl tracking-tight uppercase">
+              <h2 className="font-display font-bold text-on-surface text-xl tracking-tight uppercase">
                 {state.activeQuestion.categoryName}
               </h2>
             </div>
           </div>
 
-          {/* Clue card */}
-          <div className="relative w-full max-w-5xl">
+          {/* Clue card — flex-1 so it fills remaining space between category and buzz */}
+          <div className="relative flex-1 min-h-0 w-full max-w-5xl">
             {/* Corner accents */}
-            <div className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-gold/50 rounded-tl-2xl" />
-            <div className="absolute bottom-0 right-0 w-16 h-16 border-b-4 border-r-4 border-gold/50 rounded-br-2xl" />
+            <div className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-gold/50 rounded-tl-2xl z-10" />
+            <div className="absolute bottom-0 right-0 w-16 h-16 border-b-4 border-r-4 border-gold/50 rounded-br-2xl z-10" />
             {/* Value badge */}
             <div className="absolute -top-5 -right-5 bg-gold text-navy font-display font-black text-2xl px-6 py-2 rounded-full rotate-6 shadow-xl z-10">
               ${state.activeQuestion.value}
             </div>
-            <div className="bg-[#291543]/60 backdrop-blur-2xl rounded-2xl p-10 md:p-16 text-center border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.6)]">
-              <p className="font-display font-extrabold text-3xl md:text-5xl lg:text-6xl leading-tight text-white drop-shadow-[0_2px_15px_rgba(255,255,255,0.2)]">
+            <div
+              ref={clueCardBodyRef}
+              className="h-full bg-[#291543]/60 backdrop-blur-2xl rounded-2xl p-8 text-center border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.6)] flex items-center justify-center overflow-hidden"
+            >
+              <p
+                ref={clueTextRef}
+                className="font-display font-extrabold leading-tight text-white drop-shadow-[0_2px_15px_rgba(255,255,255,0.2)]"
+                style={{ fontSize: "3.75rem" }}
+              >
                 {state.activeQuestion.clue}
               </p>
             </div>
           </div>
 
-          {/* Revealed answer */}
-          {state.revealedAnswer && (
-            <div
-              className={cn(
-                "mt-6 rounded-xl border px-8 py-4 text-xl font-semibold backdrop-blur",
-                state.revealedAnswer.wasCorrect
-                  ? "border-emerald-500/30 bg-emerald-900/20 text-emerald-300"
-                  : "border-red-500/30 bg-red-900/20 text-red-300",
-              )}
-            >
-              {state.revealedAnswer.wasCorrect
-                ? `✓ ${state.revealedAnswer.correctPlayerName} got it right!`
-                : "✗ Nobody got it right."}
-              {" — "}
-              {state.revealedAnswer.answer}
-            </div>
-          )}
+          {/* Revealed answer + buzz — pinned at bottom, shrink-0 */}
+          <div className="shrink-0 w-full max-w-5xl flex flex-col items-center gap-3">
+            {/* Revealed answer */}
+            {state.revealedAnswer && (
+              <div
+                className={cn(
+                  "w-full rounded-xl border px-8 py-4 text-xl font-semibold backdrop-blur text-center",
+                  state.revealedAnswer.wasCorrect
+                    ? "border-emerald-500/30 bg-emerald-900/20 text-emerald-300"
+                    : "border-red-500/30 bg-red-900/20 text-red-300",
+                )}
+              >
+                {state.revealedAnswer.wasCorrect
+                  ? `✓ ${state.revealedAnswer.correctPlayerName} got it right!`
+                  : "✗ Nobody got it right."}
+                {" — "}
+                {state.revealedAnswer.answer}
+              </div>
+            )}
 
-          {/* Buzz / steal / waiting */}
-          <div className="mt-8 flex flex-col items-center gap-4 w-full max-w-xl">
-            {state.buzzedPlayer ? (
-              <>
-                <div className="font-display text-3xl font-bold text-gold animate-[pulse-gold_2s_ease-in-out_infinite] rounded-2xl border border-gold/30 bg-gold/10 px-10 py-6 text-center w-full">
-                  ⚡ {state.buzzedPlayer.playerName}
-                </div>
-                {state.buzzDeadline && (
-                  <TimerBar
-                    secondsLeft={buzzSecondsLeft}
-                    label="Time to answer"
-                  />
-                )}
-              </>
-            ) : isStealPhase ? (
-              <>
-                <div className="font-display text-2xl font-semibold text-yellow-400">
-                  Steal opportunity!
-                </div>
-                <TimerBar secondsLeft={stealSecondsLeft} label="Steal window" />
-              </>
-            ) : !state.revealedAnswer ? (
-              <>
-                {/* Voltage timer bar */}
-                {buzzSecondsLeft !== null && (
-                  <div className="w-full flex flex-col gap-2 mt-4">
-                    <div className="flex justify-between font-display font-bold text-secondary text-sm tracking-widest uppercase px-1">
-                      <span>VOLTAGE DEPLETING</span>
-                      <span>{String(buzzSecondsLeft).padStart(2, "0")}s</span>
-                    </div>
-                    <div className="w-full h-4 bg-[#301a4d] rounded-full p-1 relative overflow-hidden shadow-[0_0_20px_rgba(0,227,253,0.2)]">
-                      <div
-                        className="h-full bg-linear-to-r from-secondary to-secondary rounded-full transition-all relative"
-                        style={{ width: "75%" }}
-                      >
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full blur-[2px] shadow-[0_0_8px_white]" />
-                      </div>
-                    </div>
+            {/* Buzz / steal / waiting */}
+            <div className="w-full flex flex-col items-center gap-4 max-w-xl">
+              {state.buzzedPlayer ? (
+                <>
+                  <div className="font-display text-3xl font-bold text-gold animate-[pulse-gold_2s_ease-in-out_infinite] rounded-2xl border border-gold/30 bg-gold/10 px-10 py-6 text-center w-full">
+                    ⚡ {state.buzzedPlayer.playerName}
                   </div>
-                )}
-                <p className="text-on-surface-variant text-xl animate-pulse font-display tracking-wider uppercase text-sm">
-                  Waiting for buzz…
-                </p>
-              </>
-            ) : null}
+                  {state.buzzDeadline && (
+                    <TimerBar
+                      secondsLeft={buzzSecondsLeft}
+                      totalSeconds={buzzTotalSeconds}
+                      label="Time to answer"
+                      color="gold"
+                    />
+                  )}
+                </>
+              ) : isStealPhase ? (
+                <>
+                  <div className="font-display text-2xl font-semibold text-yellow-400">
+                    Steal opportunity!
+                  </div>
+                  <TimerBar
+                    secondsLeft={stealSecondsLeft}
+                    totalSeconds={stealTotalSeconds}
+                    label="Steal window"
+                    color="yellow"
+                  />
+                </>
+              ) : !state.revealedAnswer ? (
+                <>
+                  {questionSecondsLeft !== null && (
+                    <TimerBar
+                      secondsLeft={questionSecondsLeft}
+                      totalSeconds={questionTotalSeconds}
+                      label="Time to buzz"
+                      color="cyan"
+                    />
+                  )}
+                  <p className="text-on-surface-variant text-xl animate-pulse font-display tracking-wider uppercase text-sm">
+                    Waiting for buzz…
+                  </p>
+                </>
+              ) : null}
+            </div>
           </div>
         </div>
       )}

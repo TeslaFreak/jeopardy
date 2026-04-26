@@ -8,12 +8,17 @@ import { useEffect, useState } from 'react';
  */
 export function useCountdown(deadline: number | null) {
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const [totalSeconds, setTotalSeconds] = useState<number | null>(null);
 
   useEffect(() => {
     if (deadline == null) {
       setSecondsLeft(null);
+      setTotalSeconds(null);
       return;
     }
+
+    const initial = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    setTotalSeconds(initial);
 
     const tick = () => {
       const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
@@ -27,6 +32,7 @@ export function useCountdown(deadline: number | null) {
 
   return {
     secondsLeft,
+    totalSeconds,
     isExpired: secondsLeft !== null && secondsLeft <= 0,
   };
 }
