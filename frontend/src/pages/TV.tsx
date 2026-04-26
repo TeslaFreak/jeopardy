@@ -193,6 +193,17 @@ export default function TV() {
               "rotate-1",
               "-rotate-1",
             ];
+            const ICONS = ["🚀", "🐱", "🤖", "🎉", "💀", "🦊", "🌟", "🎮"];
+            const ICON_BG = [
+              "bg-secondary/20",
+              "bg-tertiary/20",
+              "bg-gold/20",
+              "bg-emerald-500/20",
+              "bg-red-500/20",
+              "bg-purple-500/20",
+              "bg-orange-500/20",
+              "bg-blue-500/20",
+            ];
             const score = state.scores[p.connId] ?? 0;
             const isBuzzed = state.buzzedPlayer?.playerId === p.connId;
             const isFailed = state.failedBuzzPlayers.includes(p.connId);
@@ -209,6 +220,16 @@ export default function TV() {
                       : "border-outline-variant/20",
                 )}
               >
+                {/* Avatar icon */}
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-lg flex items-center justify-center text-2xl shrink-0 relative overflow-hidden",
+                    ICON_BG[i % ICON_BG.length],
+                  )}
+                >
+                  <div className="absolute inset-0 glossy-overlay" />
+                  <span>{ICONS[i % ICONS.length]}</span>
+                </div>
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-tighter text-on-surface-variant leading-none mb-0.5">
                     {p.playerName}
@@ -271,7 +292,7 @@ export default function TV() {
 
       {/* Board */}
       {state.phase === "active" && !state.activeQuestion && (
-        <div className="relative z-10 flex-1 min-h-0 flex gap-14 px-28 pb-28 pt-4">
+        <div className="relative z-10 flex-1 min-h-0 flex gap-4 px-28 pb-28 pt-4">
           {state.board.map((cat, i) => {
             const TILTS = [
               "-rotate-2",

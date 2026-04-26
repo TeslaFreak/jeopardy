@@ -70,34 +70,41 @@ export const handler = async (
     return { statusCode: 200, body: 'OK' };
   }
 
-  if (role === 'host') {
-    // Host left — delete their record, mark room ended, notify everyone
-    await ddb.send(new DeleteCommand({
-      TableName: GAMES_TABLE,
-      Key: { PK: `ROOM#${roomCode}`, SK: `CONN#${connId}` },
-    }));
-    await ddb.send(new UpdateCommand({
-      TableName: GAMES_TABLE,
-      Key: { PK: `ROOM#${roomCode}`, SK: 'META' },
-      UpdateExpression: 'SET #s = :s',
-      ExpressionAttributeNames: { '#s': 'status' },
-      ExpressionAttributeValues: { ':s': 'ended' },
-    }));
-    const connsResult = await ddb.send(new QueryCommand({
-      TableName: GAMES_TABLE,
-      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
-      ExpressionAttributeValues: { ':pk': `ROOM#${roomCode}`, ':skPrefix': 'CONN#' },
-    }));
-    const remaining = (connsResult.Items ?? []) as { connId: string }[];
-    await broadcast(apigw, remaining, 'GAME_OVER', { reason: 'Host disconnected' });
-    return { statusCode: 200, body: 'OK' };
-  }
-
-  // Player disconnect — check game state
+  // Fetch room META (needed for both host and player disconnect logic)
   const meta = await ddb.send(new GetCommand({
     TableName: GAMES_TABLE,
     Key: { PK: `ROOM#${roomCode}`, SK: 'META' },
   }));
+
+  if (role === 'host') {
+    if (meta.Item?.status !== 'active') {
+      // Lobby or ended — delete host record and mark room ended
+      await ddb.send(new DeleteCommand({
+        TableName: GAMES_TABLE,
+        Key: { PK: `ROOM#${roomCode}`, SK: `CONN#${connId}` },
+      }));
+      await ddb.send(new UpdateCommand({
+        TableName: GAMES_TABLE,
+        Key: { PK: `ROOM#${roomCode}`, SK: 'META' },
+        UpdateExpression: 'SET #s = :s',
+        ExpressionAttributeNames: { '#s': 'status' },
+        ExpressionAttributeValues: { ':s': 'ended' },
+      }));
+      return { statusCode: 200, body: 'OK' };
+    }
+
+    // Active game — mark host as disconnected so they can reconnect.
+    // Do NOT end the room; the host's client will auto-reconnect within seconds.
+    await ddb.send(new UpdateCommand({
+      TableName: GAMES_TABLE,
+      Key: { PK: `ROOM#${roomCode}`, SK: `CONN#${connId}` },
+      UpdateExpression: 'SET disconnected = :t',
+      ExpressionAttributeValues: { ':t': true },
+    }));
+    return { statusCode: 200, body: 'OK' };
+  }
+
+  // Player disconnect — check game state
 
   if (meta.Item?.status !== 'active') {
     // Lobby or ended — safe to delete immediately, nothing to preserve
