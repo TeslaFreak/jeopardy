@@ -489,54 +489,49 @@ export default function HostGame() {
 
       {/* Active — Board */}
       {phase === "active" && !state.activeQuestion && (
-        <div className="overflow-x-auto rounded-xl border border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
-          <table
-            className="w-full border-collapse"
-            style={{ minWidth: `${state.board.length * 140}px` }}
-          >
-            <thead>
-              <tr>
-                {state.board.map((cat) => (
-                  <th
-                    key={cat.slug}
-                    className="bg-board border-b-2 border-black/30 px-3 py-4 text-center"
-                  >
-                    <span className="font-display font-semibold text-sm text-white uppercase tracking-wider">
-                      {cat.name}
+        <div
+          className="grid gap-2"
+          style={{
+            gridTemplateColumns: `repeat(${state.board.length || 6}, minmax(0, 1fr))`,
+          }}
+        >
+          {/* Category headers */}
+          {state.board.map((cat) => (
+            <div
+              key={cat.slug}
+              className="h-14 flex items-center justify-center text-center px-2 py-1 bg-[#301a4d] rounded-2xl"
+            >
+              <span className="font-display font-extrabold text-xs text-gold uppercase leading-tight tracking-tight">
+                {cat.name}
+              </span>
+            </div>
+          ))}
+          {/* Value tiles */}
+          {VALUES.map((val) =>
+            state.board.map((cat) => {
+              const key = `${cat.slug}#${val}`;
+              const used = state.usedQuestions.includes(key);
+              return (
+                <button
+                  key={`${cat.slug}-${val}`}
+                  disabled={used}
+                  onClick={() => selectQuestion(cat.slug, val)}
+                  className={cn(
+                    "h-16 rounded-2xl flex items-center justify-center relative overflow-hidden transition-all duration-150",
+                    used
+                      ? "bg-[#150629]/50 border border-outline-variant/10 opacity-30 cursor-default"
+                      : "bg-[#291543] border border-secondary/20 shadow-[inset_0_0_15px_rgba(0,227,253,0.05)] hover:bg-[#372056] hover:border-secondary/50 hover:scale-[1.03] cursor-pointer active:scale-[0.97]",
+                  )}
+                >
+                  {!used && (
+                    <span className="font-display font-black text-xl text-secondary drop-shadow-[0_0_8px_rgba(0,227,253,0.4)]">
+                      ${val}
                     </span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {VALUES.map((val) => (
-                <tr key={val}>
-                  {state.board.map((cat) => {
-                    const key = `${cat.slug}#${val}`;
-                    const used = state.usedQuestions.includes(key);
-                    return (
-                      <td
-                        key={cat.slug}
-                        onClick={() => !used && selectQuestion(cat.slug, val)}
-                        className={cn(
-                          "border border-black/40 text-center h-20 transition-all duration-150",
-                          used
-                            ? "bg-navy cursor-default"
-                            : "bg-board hover:bg-board-hover cursor-pointer",
-                        )}
-                      >
-                        {!used && (
-                          <span className="font-display font-bold text-2xl text-gold">
-                            ${val}
-                          </span>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  )}
+                </button>
+              );
+            }),
+          )}
         </div>
       )}
 

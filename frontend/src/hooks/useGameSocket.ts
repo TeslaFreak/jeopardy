@@ -242,6 +242,49 @@ export function useGameSocket() {
         });
         break;
       }
+      case 'TV_STATE_SYNC': {
+        type TvSyncPayload = {
+          phase: GamePhase;
+          players: PlayerInfo[];
+          scores: Record<string, number>;
+          board?: GameState['board'];
+          usedQuestions?: string[];
+          config?: GameConfig;
+          failedBuzzPlayers?: string[];
+          activeQuestion: {
+            question: { clue: string; answer?: string };
+            categorySlug: string;
+            categoryName: string;
+            value: number;
+          } | null;
+          buzzedPlayer?: { playerId: string; playerName: string } | null;
+          finalScores?: Record<string, number>;
+        };
+        const p = payload as TvSyncPayload;
+        setState(prev => ({
+          ...prev,
+          phase: p.phase,
+          players: p.players,
+          scores: p.scores,
+          board: p.board ?? prev.board,
+          usedQuestions: p.usedQuestions ?? prev.usedQuestions,
+          config: p.config ?? prev.config,
+          failedBuzzPlayers: p.failedBuzzPlayers ?? prev.failedBuzzPlayers,
+          activeQuestion: p.activeQuestion
+            ? {
+                clue: p.activeQuestion.question.clue,
+                answer: p.activeQuestion.question.answer,
+                categorySlug: p.activeQuestion.categorySlug,
+                categoryName: p.activeQuestion.categoryName,
+                value: p.activeQuestion.value,
+              }
+            : null,
+          buzzedPlayer: p.buzzedPlayer ?? null,
+          finalScores: p.finalScores ?? null,
+          isReconnecting: false,
+        }));
+        break;
+      }
       case 'ERROR': {
         const p = payload as { message: string };
         updateState({ error: p.message });
@@ -290,12 +333,18 @@ export function useGameSocket() {
         ...prev,
         roomCode,
         connId: null, // will be set if needed
-        phase: wasReconnecting && prev.phase !== 'idle' ? prev.phase : 'lobby',
+        // TV stays in idle until TV_STATE_SYNC arrives; players set phase to lobby
+        phase: role === 'tv'
+          ? (wasReconnecting ? prev.phase : 'idle')
+          : (wasReconnecting && prev.phase !== 'idle' ? prev.phase : 'lobby'),
         error: null,
         isReconnecting: false,
       }));
       if (!isHost && role !== 'tv') {
         sendMessage('JOIN_ROOM', { roomCode, playerName });
+      }
+      if (role === 'tv') {
+        sendMessage('REQUEST_STATE_SYNC', {});
       }
     };
 

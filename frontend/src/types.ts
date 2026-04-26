@@ -48,7 +48,8 @@ export type ClientAction =
   | 'JUDGE_ANSWER'
   | 'END_GAME'
   | 'STEAL_EXPIRED'
-  | 'BUZZ_TIMER_EXPIRED';
+  | 'BUZZ_TIMER_EXPIRED'
+  | 'REQUEST_STATE_SYNC';
 
 export type ServerAction =
   | 'PLAYER_JOINED'
@@ -60,6 +61,7 @@ export type ServerAction =
   | 'BACK_TO_BOARD'
   | 'GAME_OVER'
   | 'GAME_STATE_SYNC'
+  | 'TV_STATE_SYNC'
   | 'STEAL_OPEN'
   | 'REVEAL_ANSWER'
   | 'ERROR';

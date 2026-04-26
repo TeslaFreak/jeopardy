@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useGameSocket } from "../hooks/useGameSocket";
 import { useCountdown } from "../hooks/useCountdown";
-import { Badge } from "@/components/ui/badge";
+
 import { cn } from "@/lib/utils";
 import { Trophy, Loader2, WifiOff, Clock } from "lucide-react";
 
@@ -150,7 +150,7 @@ export default function TV() {
     state.stealDeadline !== null && !state.buzzedPlayer && state.activeQuestion;
 
   return (
-    <div className="min-h-screen bg-navy">
+    <div className="h-screen overflow-hidden flex flex-col bg-navy">
       {/* Ambient background blobs */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute -top-24 -left-24 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-[120px]" />
@@ -166,9 +166,24 @@ export default function TV() {
         </div>
       )}
 
-      {/* Scoreboard — always visible */}
+      {/* Header — room code top-left, brand top-right */}
+      <header className="relative z-10 shrink-0 flex items-center justify-between px-6 py-3">
+        <div className="bg-[#22103a] border border-outline-variant/20 px-4 py-1.5 rounded-full flex items-center gap-2">
+          <span className="text-[10px] font-bold text-secondary tracking-widest uppercase">
+            ROOM
+          </span>
+          <span className="font-display font-black text-sm text-gold tracking-widest">
+            {roomCode}
+          </span>
+        </div>
+        <span className="font-display font-black italic text-gold text-xl uppercase tracking-tight drop-shadow-glow">
+          JEOPARDY!
+        </span>
+      </header>
+
+      {/* Scoreboard strip — always rendered, player cards */}
       {state.players.length > 0 && (
-        <div className="relative z-10 flex gap-3 flex-wrap justify-center pt-6 px-6 mb-4">
+        <section className="relative z-10 shrink-0 flex flex-wrap justify-center gap-3 px-6 pb-3">
           {state.players.map((p, i) => {
             const ROTATIONS = [
               "-rotate-1",
@@ -178,23 +193,24 @@ export default function TV() {
               "rotate-1",
               "-rotate-1",
             ];
+            const score = state.scores[p.connId] ?? 0;
             const isBuzzed = state.buzzedPlayer?.playerId === p.connId;
             const isFailed = state.failedBuzzPlayers.includes(p.connId);
             return (
               <div
                 key={p.connId}
                 className={cn(
-                  "flex items-center gap-3 px-5 py-3 rounded-xl border backdrop-blur-md transition-all text-lg",
+                  "bg-[#291543]/60 backdrop-blur-md px-6 py-3 rounded-xl border flex items-center gap-4 transition-all",
                   ROTATIONS[i % ROTATIONS.length],
                   isBuzzed
-                    ? "border-gold/40 bg-[#291543] shadow-[0_0_30px_rgba(255,254,172,0.15)]"
+                    ? "border-gold/40 shadow-[0_0_30px_rgba(255,254,172,0.1)]"
                     : isFailed
-                      ? "border-red-500/20 bg-red-900/10"
-                      : "border-outline-variant/20 bg-[#291543]/60",
+                      ? "border-red-500/20"
+                      : "border-outline-variant/20",
                 )}
               >
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-tighter text-on-surface-variant">
+                  <p className="text-[10px] font-black uppercase tracking-tighter text-on-surface-variant leading-none mb-0.5">
                     {p.playerName}
                   </p>
                   <p
@@ -204,21 +220,25 @@ export default function TV() {
                         ? "text-gold drop-shadow-glow"
                         : isFailed
                           ? "text-red-400"
-                          : "text-gold",
+                          : score < 0
+                            ? "text-red-400"
+                            : "text-gold",
                     )}
                   >
-                    ${state.scores[p.connId] ?? 0}
+                    {score < 0
+                      ? `-$${Math.abs(score).toLocaleString()}`
+                      : `$${score.toLocaleString()}`}
                   </p>
                 </div>
               </div>
             );
           })}
-        </div>
+        </section>
       )}
 
       {/* Lobby */}
       {state.phase === "lobby" && (
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] gap-10">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center gap-10">
           <p className="font-display font-black italic text-7xl uppercase tracking-tight text-gold drop-shadow-[0_0_40px_rgba(255,254,172,0.5)] animate-[glow-text-gold_3s_ease-in-out_infinite]">
             JEOPARDY!
           </p>
@@ -251,71 +271,63 @@ export default function TV() {
 
       {/* Board */}
       {state.phase === "active" && !state.activeQuestion && (
-        <div className="relative z-10 px-4 md:px-8 pb-8">
-          <div
-            className="grid gap-3 md:gap-4"
-            style={{
-              gridTemplateColumns: `repeat(${state.board.length || 6}, minmax(0, 1fr))`,
-            }}
-          >
-            {/* Category headers */}
-            {state.board.map((cat, i) => {
-              const ROTATIONS = [
-                "-rotate-1",
-                "rotate-1",
-                "-rotate-2",
-                "rotate-2",
-                "rotate-1",
-                "-rotate-1",
-              ];
-              return (
+        <div className="relative z-10 flex-1 min-h-0 flex gap-14 px-28 pb-28 pt-4">
+          {state.board.map((cat, i) => {
+            const TILTS = [
+              "-rotate-2",
+              "rotate-1",
+              "-rotate-1",
+              "rotate-2",
+              "rotate-1",
+              "-rotate-2",
+            ];
+            return (
+              <div key={cat.slug} className="flex-1 flex flex-col gap-3">
+                {/* Category header */}
                 <div
-                  key={cat.slug}
                   className={cn(
-                    "h-24 flex items-center justify-center text-center p-2 bg-[#301a4d] rounded-xl shadow-lg",
-                    ROTATIONS[i % ROTATIONS.length],
+                    "shrink-0 h-24 flex items-center justify-center text-center px-3 py-2 bg-[#301a4d] rounded-[2rem] shadow-lg mb-1",
+                    TILTS[i % TILTS.length],
                   )}
                 >
-                  <h3 className="font-display font-extrabold text-sm md:text-base text-gold uppercase leading-tight tracking-tight">
+                  <h3 className="font-display font-extrabold text-xs md:text-sm text-gold uppercase leading-tight tracking-tight">
                     {cat.name}
                   </h3>
                 </div>
-              );
-            })}
-            {/* Value rows */}
-            {VALUES.map((val) =>
-              state.board.map((cat) => {
-                const key = `${cat.slug}#${val}`;
-                const used = state.usedQuestions.includes(key);
-                return (
-                  <div
-                    key={`${cat.slug}-${val}`}
-                    className={cn(
-                      "aspect-[5/3] rounded-xl flex items-center justify-center relative overflow-hidden transition-all",
-                      used
-                        ? "bg-[#150629]/50 border border-outline-variant/10 opacity-30"
-                        : "bg-[#291543] border border-secondary/10 shadow-[inset_0_0_15px_rgba(0,227,253,0.05)] hover:scale-[1.02]",
-                    )}
-                  >
-                    {!used && (
-                      <>
-                        <div className="absolute inset-0 bg-linear-to-b from-white/5 to-transparent" />
-                        <span className="font-display font-black text-2xl md:text-3xl text-secondary drop-shadow-[0_0_8px_rgba(0,227,253,0.4)]">
-                          ${val}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                );
-              }),
-            )}
-          </div>
+                {/* Value tiles */}
+                {VALUES.map((val) => {
+                  const key = `${cat.slug}#${val}`;
+                  const used = state.usedQuestions.includes(key);
+                  return (
+                    <div
+                      key={val}
+                      className={cn(
+                        "flex-1 rounded-[2.5rem] flex items-center justify-center relative overflow-hidden transition-all",
+                        used
+                          ? "bg-[#1b0a31] border border-outline-variant/10 opacity-30"
+                          : "bg-[#291543] border border-secondary/10 neon-border-glow",
+                      )}
+                    >
+                      {!used && (
+                        <>
+                          <div className="absolute inset-0 glossy-overlay" />
+                          <span className="font-display font-black text-2xl md:text-3xl text-secondary drop-shadow-[0_0_10px_rgba(0,227,253,0.5)]">
+                            ${val}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       )}
 
       {/* Active question — Clue View */}
       {state.phase === "active" && state.activeQuestion && (
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] px-6 animate-[slide-up_0.3s_ease-out]">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 animate-[slide-up_0.3s_ease-out]">
           {/* Ambient glow behind card */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gold/5 blur-[120px] rounded-full pointer-events-none" />
 
@@ -423,7 +435,7 @@ export default function TV() {
             players={state.players}
           />
         ) : (
-          <div className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] gap-6 animate-[slide-up_0.4s_ease-out] px-6">
+          <div className="relative z-10 flex-1 flex flex-col items-center justify-center gap-6 animate-[slide-up_0.4s_ease-out] px-6">
             <Trophy className="w-20 h-20 text-gold drop-shadow-[0_0_40px_rgba(255,254,172,0.6)] animate-[pulse-gold_2s_ease-in-out_infinite]" />
             <h2 className="font-display text-6xl font-black italic uppercase tracking-tight text-gold drop-shadow-[0_0_30px_rgba(255,254,172,0.4)]">
               Game Over!
@@ -468,7 +480,7 @@ export default function TV() {
 
       {/* Idle — waiting for connection */}
       {state.phase === "idle" && (
-        <div className="relative z-10 flex items-center justify-center min-h-[80vh] text-on-surface-variant font-display uppercase tracking-widest text-sm gap-3">
+        <div className="relative z-10 flex-1 flex items-center justify-center text-on-surface-variant font-display uppercase tracking-widest text-sm gap-3">
           <Loader2 className="w-6 h-6 animate-spin text-secondary/60" />
           Connecting to room {roomCode}…
         </div>

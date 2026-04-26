@@ -538,6 +538,59 @@ export const handler = async (
       break;
     }
 
+    // ── REQUEST_STATE_SYNC ────────────────────────────────────────────────
+    // TV clients send this on connect to get the full current game state.
+    case 'REQUEST_STATE_SYNC': {
+      const freshConns = (await getConnections(roomCode)) as ConnRecord[];
+      const freshLive = freshConns.filter(c => !c.disconnected);
+      const players = freshLive
+        .filter(c => resolveRole(c) === 'player')
+        .map(c => ({ connId: c.connId, playerName: c.playerName, score: c.score }));
+      const scores = buildScores(freshLive);
+      const phase = room.status === 'active' ? 'active' : room.status === 'ended' ? 'ended' : 'lobby';
+
+      if (phase === 'lobby') {
+        await send(apigw, connId, 'TV_STATE_SYNC', { phase, players, scores });
+      } else if (phase === 'active') {
+        const config = (room.config as GameConfig) ?? DEFAULT_GAME_CONFIG;
+        const activeQ = room.activeQuestion as { categorySlug: string; value: number } | null;
+        let activeQPayload = null;
+        if (activeQ) {
+          const board = room.board as Category[];
+          const cat = board.find(c => c.slug === activeQ.categorySlug);
+          const q = cat?.questions.find(q => q.value === activeQ.value);
+          if (cat && q) {
+            activeQPayload = {
+              question: { clue: q.clue },
+              categorySlug: activeQ.categorySlug,
+              categoryName: cat.name,
+              value: activeQ.value,
+            };
+          }
+        }
+        let buzzedPlayerPayload = null;
+        if (room.buzzedConnId) {
+          const bc = freshLive.find(c => c.connId === room.buzzedConnId);
+          if (bc) buzzedPlayerPayload = { playerId: bc.connId, playerName: bc.playerName };
+        }
+        await send(apigw, connId, 'TV_STATE_SYNC', {
+          phase,
+          players,
+          scores,
+          board: room.board,
+          usedQuestions: room.usedQuestions ?? [],
+          config,
+          failedBuzzPlayers: room.failedBuzzPlayers ?? [],
+          activeQuestion: activeQPayload,
+          buzzedPlayer: buzzedPlayerPayload,
+        });
+      } else {
+        // ended
+        await send(apigw, connId, 'TV_STATE_SYNC', { phase, players, scores, finalScores: scores });
+      }
+      break;
+    }
+
     default:
       await send(apigw, connId, 'ERROR', { message: `Unknown action: ${msg.action}` });
   }

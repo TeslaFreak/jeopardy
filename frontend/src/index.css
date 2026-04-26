@@ -181,6 +181,14 @@ body {
     inset 0 0 10px rgba(0, 227, 253, 0.15);
 }
 
+.glossy-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0) 50%
+  );
+}
+
 .glass-dome {
   background: linear-gradient(
     180deg,

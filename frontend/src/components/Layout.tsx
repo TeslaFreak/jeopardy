@@ -8,6 +8,8 @@ export function Navbar() {
   const { authStatus, signOut } = useAuthenticator((ctx) => [ctx.authStatus]);
   const isAuthenticated = authStatus === "authenticated";
   const isPlayPage = location.pathname === "/play";
+  const isTVPage = location.pathname === "/tv";
+  if (isTVPage) return null;
 
   return (
     <nav className="sticky top-0 z-40 border-b border-outline-variant/20 bg-navy/80 backdrop-blur-xl">
@@ -59,10 +61,18 @@ export function Navbar() {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const isTVPage = location.pathname === "/tv";
   return (
-    <div className="min-h-screen bg-navy flex flex-col">
+    <div
+      className={
+        isTVPage
+          ? "h-screen overflow-hidden bg-navy"
+          : "min-h-screen bg-navy flex flex-col"
+      }
+    >
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className={isTVPage ? "h-full" : "flex-1"}>{children}</main>
     </div>
   );
 }
